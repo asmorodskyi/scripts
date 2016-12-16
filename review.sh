@@ -1,0 +1,2 @@
+#!/bin/bash
+openqa-review --host http://openqa.suse.de --against-reviewed last -vvvv -s -n -T --bugrefs --no-empty-sections --include-softfails --query-issue-status --running-threshold=10 -J http://openqa.suse.de/group_overview/$1
