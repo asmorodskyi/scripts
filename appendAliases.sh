@@ -10,9 +10,7 @@ alias_array[7]="alias gphf=\"git push -f\""
 alias_array[8]="alias grhh=\"git reset --hard HEAD\""
 for i in "${alias_array[@]}";
 do
-if ! grep -q $i  $modify_file; then
- echo "$i - NOT EXISTS"
- else 
-   echo "$i"
+if ! grep -q "$i"  $modify_file; then
+ echo "$i" >> $modify_file
 fi
 done
