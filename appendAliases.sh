@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 modify_file=~/.bashrc
 alias_array[1]="alias gco=\"git checkout\""
 alias_array[2]="alias gpl=\"git pull\""

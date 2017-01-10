@@ -1,5 +1,4 @@
-#!/bin/bash
-set -x
+#!/bin/sh -x
 function smart_checkout() {
   if [ "$(git symbolic-ref --short -q HEAD)" = 'master' ]; then
    git pull origin master
