@@ -9,6 +9,10 @@ alias_array[6]="alias gcim=\"git commit --amend\""
 alias_array[7]="alias gphf=\"git push -f\""
 alias_array[8]="alias grhh=\"git reset --hard HEAD\""
 alias_array[9]="alias gba=\"git branch -a\""
+alias_array[10]="alias gci=\"git commit\""
+alias_array[11]="alias gdf=\"git diff\""
+alias_array[12]="alias hgrep=\"history | grep\""
+alias_array[13]="alias gcon=\"/scripts/git_checkout_new.sh\""
 for i in "${alias_array[@]}";
 do
 if ! grep -q "$i"  $modify_file; then
