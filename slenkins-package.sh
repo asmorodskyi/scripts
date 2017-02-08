@@ -1,11 +1,7 @@
 #!/bin/sh -e
-dir="${1:-"/home/asmorodskyi/source/slenkins_source"}"
-name="${2:-"tests-hpc"}"
-destination_repository="${3:-"/home/asmorodskyi/source/slenkins_package"}"
-current_path=$(pwd)
-cd "$destination_repository/$name"
-version=$(sed -n -e 's/^Version:\s*\([0-9.]\+\)/\1/p' $name.spec)
-cd $dir
-tar --transform "s,$name,$name-${version},S" -czf $name-${version}.tgz $name/
-mv $name-${version}.tgz "${destination_repository}/$name/"
-cd $current_path
+current_dir=$(pwd)
+destination_repository='/home/asmorodskyi/source/slenkins_package'
+cd "$destination_repository"
+osc -A ibs build SLE_12_SP1 --no-verify --no-init; osc -A ibs build SLE_12_SP2 --no-verify --no-init
+slenkins-vms.sh -i client=SLE_12_SP2_openQA-x86_64-minimal_with_sdk_installed -i server=SLE_12_SP2_openQA-x86_64-minimal_with_sdk_installed -l tests-hpc
+cd $current_dir
