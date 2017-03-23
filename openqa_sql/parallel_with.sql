@@ -1,0 +1,1 @@
+select result_dir,test,distri,version,flavor,arch,build,machine,logs_present from jobs where id in (select job_id from job_settings where key='PARALLEL_WITH' and value='hacluster-supportserver') order by 2;

@@ -1,0 +1,2 @@
+select name from job_groups where id in (select group_id from jobs where id in (select job_id from job_modules where t_created > '2017-02-01'::date and script='tests/support_server/boot.pm') group by group_id);
+select distinct(test),result, first_value(id) OVER ( partition by test order by test, t_created) from jobs where id in (select job_id from job_modules where t_created > '2017-02-01'::date and script='tests/support_server/boot.pm');
