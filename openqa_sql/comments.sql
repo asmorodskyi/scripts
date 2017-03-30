@@ -1,0 +1,1 @@
+select text,count(text) from comments where job_id in (select id from jobs where build='0297') group by text order by 2 desc;
