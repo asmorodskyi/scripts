@@ -1,0 +1,1 @@
+select script,count(*)  from job_modules where job_id in (select id from jobs where build='0341' and result='failed') and result='failed' group by script order by 2 desc;
