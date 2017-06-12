@@ -12,10 +12,10 @@ alias_array[9]="alias gba=\"git branch -a\""
 alias_array[10]="alias gci=\"git commit\""
 alias_array[11]="alias gdf=\"git diff\""
 alias_array[12]="alias hgrep=\"history | grep\""
-alias_array[13]="alias gcon=\"/scripts/git_checkout_new.sh\""
+alias_array[13]="alias gcon=\"/scripts/git/git_checkout_new.sh\""
 alias_array[14]="alias gbd=\"git branch -D\""
-alias_array[15]="alias grm=\"git rebase master\""
-alias_array[16]="alias gcob=\"/scripts/checkout.sh\""
+alias_array[15]="alias grm=\"/scripts/git/rebase.sh\""
+alias_array[16]="alias gcob=\"/scripts/git/checkout.sh\""
 for i in "${alias_array[@]}";
 do
 if ! grep -q "$i"  $modify_file; then
