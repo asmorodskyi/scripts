@@ -17,43 +17,43 @@ key="$1"
 case $key in
     -h|--host)
     openqa_host="$2"
-    shift # past argument
-    shift # past value
+    shift
+    shift
     ;;
     -v|--version)
     version="$2"
-    shift # past argument
-    shift # past value
+    shift
+    shift
     ;;
     -d|--distri)
     distri="$2"
-    shift # past argument
-    shift # past value
+    shift
+    shift
     ;;
     -f|--flavor)
     flavor="$2"
-    shift # past argument
-    shift # past value
+    shift
+    shift
     ;;
     -a|--arch)
     arch="$2"
-    shift # past argument
-    shift # past value
+    shift
+    shift
     ;;
     -i|--iso)
     iso="$2"
-    shift # past argument
-    shift # past value
+    shift
+    shift
     ;;
     -b|--build)
     build="$2"
-    shift # past argument
-    shift # past value
+    shift
+    shift
     ;;
     --hdd)
     hdd="$2"
-    shift # past argument
-    shift # past value
+    shift
+    shift
     ;;
 esac
 done
