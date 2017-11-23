@@ -17,6 +17,7 @@ alias_array[14]="alias gbd=\"git branch -D\""
 alias_array[15]="alias grm=\"/scripts/git/rebase.sh\""
 alias_array[16]="alias gcob=\"/scripts/git/checkout.sh\""
 alias_array[17]="alias ghub=\"/scripts/git/hub.sh\""
+alias_array[18]="alias gupf=\"/scripts/git/fetch_and_reset.sh\""
 for i in "${alias_array[@]}";
 do
 if ! grep -q "$i"  $modify_file; then
