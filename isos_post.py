@@ -1,3 +1,5 @@
+#!/usr/bin/python2
+
 import subprocess
 import argparse
 import sys
@@ -12,7 +14,7 @@ parser.add_argument('--iso')
 parser.add_argument('--build')
 parser.add_argument('--test')
 args = parser.parse_args()
-allargs = '/usr/bin/openqa-client isos post _NOOBSOLETEBUILD=1 DESKTOP=textmode '
+allargs = '/usr/bin/openqa-client isos post _NOOBSOLETEBUILD=1 '
 if args.host:
     allargs += '--host ' + args.host
 else:
@@ -37,13 +39,18 @@ if args.build:
     build = args.build
 else:
     build = '489.1'
+if args.iso:
+    iso = args.iso
+else:
+    iso = '{0}-{1}-{2}-{3}-Build{4}-Media1.iso'.format(
+        distri, version, flavor, arch, build)
 
 if args.test:
     allargs += ' TEST=' + args.test
 
 
-allargs += ' BUILD={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4} ISO={1}-{2}-{3}-{4}-Build{0}-Media1.iso'.format(
-    build, distri, version, flavor, arch)
+allargs += ' BUILD={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4} ISO={5}'.format(
+    build, distri, version, flavor, arch, iso)
 
 
 print 'Command to execute: \n' + allargs
