@@ -13,6 +13,7 @@ parser.add_argument('--arch')
 parser.add_argument('--iso')
 parser.add_argument('--build')
 parser.add_argument('--test')
+parser.add_argument('--testsuite')
 args = parser.parse_args()
 allargs = '/usr/bin/openqa-client isos post _NOOBSOLETEBUILD=1 '
 if args.host:
@@ -46,7 +47,25 @@ else:
         distri, version, flavor, arch, build)
 
 if args.test:
+    if args.testsuite:
+        sys.exit("You can't use test and testsuite at the same time")
     allargs += ' TEST=' + args.test
+
+if args.testsuite:
+    available_testsuites = {'mrsh': 'hpc_mrsh_master,hpc_mrsh_slave,hpc_mrsh_supportserver',
+                            'munge': 'hpc_munge_master,hpc_munge_slave,hpc_munge_supportserver',
+                            'pdsh': 'hpc_pdsh_master,hpc_pdsh_slave,hpc_pdsh_supportserver',
+                            'slurm': 'hpc_slurm_master,hpc_slurm_slave,hpc_slurm_supportserver',
+                            'ganglia': 'hpc_ganglia_server,hpc_ganglia_client,hpc_ganglia_supportserver',
+                            'pdsh_genders': 'hpc_pdsh_genders_master,hpc_pdsh_genders_slave,hpc_pdsh_genders_supportserver'}
+    testsuites = []
+    testsuites = args.testsuite.split(',')
+    result_string = ''
+    for item in testsuites:
+        if item in available_testsuites.keys():
+            result_string += available_testsuites.get(item) + ','
+    if result_string:
+        allargs += ' TEST=' + result_string[:-1]
 
 
 allargs += ' BUILD={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4} ISO={5}'.format(
