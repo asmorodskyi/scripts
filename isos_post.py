@@ -14,6 +14,7 @@ parser.add_argument('--iso')
 parser.add_argument('--build')
 parser.add_argument('--test')
 parser.add_argument('--testsuite')
+parser.add_argument('--dryrun', action='store_true')
 args = parser.parse_args()
 allargs = '/usr/bin/openqa-client isos post _NOOBSOLETEBUILD=1 '
 if args.host:
@@ -73,4 +74,5 @@ allargs += ' BUILD={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4} ISO={5}'.forma
 
 
 print 'Command to execute: \n' + allargs
-subprocess.call(allargs, shell=True)
+if not args.dryrun:
+    print subprocess.check_output(allargs, shell=True)

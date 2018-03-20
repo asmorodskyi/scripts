@@ -1,1 +1,2 @@
  select id,user_id,event_data,t_created from audit_events where event='iso_cancel' and t_created > '2018-02-08'::date and event_data like '%aarch64%' order by 4 desc;
+ select event_data from audit_events where user_id in (select id from users where nickname='asmorodskyi') and t_created > '2018-03-19'::date and event='job_create';
