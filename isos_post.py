@@ -1,8 +1,10 @@
-#!/usr/bin/python2
+#!/usr/bin/python
 
 import subprocess
 import argparse
 import sys
+import urllib.request
+import json
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--host')
@@ -28,11 +30,11 @@ else:
 if args.version:
     version = args.version
 else:
-    version = '15'
+    version = '12-SP4'
 if args.flavor:
     flavor = args.flavor
 else:
-    flavor = 'Installer-DVD'
+    flavor = 'Server-DVD'
 if args.arch:
     arch = args.arch
 else:
@@ -40,7 +42,9 @@ else:
 if args.build:
     build = args.build
 else:
-    build = '489.1'
+    with urllib.request.urlopen("https://openqa.suse.de/group_overview/139.json") as url:
+        group_json = json.loads(url.read().decode())
+    build = group_json['build_results'][0]['build']
 if args.iso:
     iso = args.iso
 else:
@@ -69,15 +73,15 @@ if args.alias:
         allargs += ' TEST=' + result_string[:-1]
 
 
-allargs += ' BUILD={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4} ISO={5}'.format(
+allargs += ' BUILD={0} BUILD_SLE={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4} ISO={5}'.format(
     build, distri, version, flavor, arch, iso)
 
 
-print 'Command to execute: \n' + allargs
+print ('Command to execute: \n' + allargs)
 if not args.force:
     answer = ""
     while answer not in ["y", "n"]:
-        answer = raw_input("Execute [Y/N]? ").lower()
+        answer = input("Execute [Y/N]? ").lower()
     if answer == 'n':
         sys.exit()
-print subprocess.check_output(allargs, shell=True)
+print (subprocess.check_output(allargs, shell=True))
