@@ -16,6 +16,7 @@ parser.add_argument('--iso')
 parser.add_argument('--build')
 parser.add_argument('--test')
 parser.add_argument('--alias')
+parser.add_argument('--params')
 parser.add_argument('--force', action='store_true')
 args = parser.parse_args()
 allargs = '/usr/bin/openqa-client isos post _NOOBSOLETEBUILD=1 '
@@ -72,6 +73,8 @@ if args.alias:
     if result_string:
         allargs += ' TEST=' + result_string[:-1]
 
+if args.params:
+    allargs += ' ' + args.params
 
 allargs += ' BUILD={0} BUILD_SLE={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4} ISO={5}'.format(
     build, distri, version, flavor, arch, iso)
