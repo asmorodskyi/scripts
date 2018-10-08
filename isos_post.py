@@ -1,9 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import subprocess
 import argparse
 import sys
-import urllib.request
+import requests
 import json
 
 parser = argparse.ArgumentParser()
@@ -43,8 +43,7 @@ else:
 if args.build:
     build = args.build
 else:
-    with urllib.request.urlopen("https://openqa.suse.de/group_overview/139.json") as url:
-        group_json = json.loads(url.read().decode())
+    group_json = requests.get("https://openqa.suse.de/group_overview/139.json").json()
     build = group_json['build_results'][0]['build']
 if args.iso:
     iso = args.iso

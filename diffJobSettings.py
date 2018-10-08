@@ -3,7 +3,7 @@
 import subprocess
 import argparse
 import sys
-import urllib.request
+import requests
 import json
 
 parser = argparse.ArgumentParser()
@@ -26,10 +26,8 @@ if args.host:
 else:
     source_url += 'openqa.suse.de/api/v1/jobs/'
 print('Result url - ' + source_url)
-with urllib.request.urlopen(source_url+ids[0]) as url:
-    group_json1 = json.loads(url.read().decode())
-with urllib.request.urlopen(source_url+ids[1]) as url:
-    group_json2 = json.loads(url.read().decode())
+group_json1 = requests.get(source_url+ids[0]).json()
+group_json2 = requests.get(source_url+ids[1]).json()
 
 diff_data = dict()
 extra_second = dict()
