@@ -31,11 +31,11 @@ else:
 if args.version:
     version = args.version
 else:
-    version = '12-SP4'
+    version = '15-SP1'
 if args.flavor:
     flavor = args.flavor
 else:
-    flavor = 'Server-DVD'
+    flavor = 'Installer-DVD'
 if args.arch:
     arch = args.arch
 else:
@@ -43,7 +43,8 @@ else:
 if args.build:
     build = args.build
 else:
-    group_json = requests.get("https://openqa.suse.de/group_overview/139.json").json()
+    group_json = requests.get(
+        "https://openqa.suse.de/group_overview/117.json").json()
     build = group_json['build_results'][0]['build']
 if args.iso:
     iso = args.iso
@@ -62,7 +63,8 @@ if args.alias:
                             'pdsh': 'hpc_pdsh_master,hpc_pdsh_slave,hpc_pdsh_supportserver',
                             'slurm': 'hpc_slurm_master,hpc_slurm_slave,hpc_slurm_supportserver',
                             'ganglia': 'hpc_ganglia_server,hpc_ganglia_client,hpc_ganglia_supportserver',
-                            'pdsh_genders': 'hpc_pdsh_genders_master,hpc_pdsh_genders_slave,hpc_pdsh_genders_supportserver'}
+                            'pdsh_genders': 'hpc_pdsh_genders_master,hpc_pdsh_genders_slave,hpc_pdsh_genders_supportserver',
+                            'network': 'wicked_advanced_ref,wicked_advanced_sut,wicked_basic_sut,wicked_basic_ref,wicked_startandstop_ref,wicked_startandstop_sut'}
     testsuites = []
     testsuites = args.alias.split(',')
     result_string = ''
@@ -79,11 +81,11 @@ allargs += ' BUILD={0} BUILD_SLE={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4} 
     build, distri, version, flavor, arch, iso)
 
 
-print ('Command to execute: \n' + allargs)
+print('Command to execute: \n' + allargs)
 if not args.force:
     answer = ""
     while answer not in ["y", "n"]:
         answer = input("Execute [Y/N]? ").lower()
     if answer == 'n':
         sys.exit()
-print (subprocess.check_output(allargs, shell=True))
+print(subprocess.check_output(allargs, shell=True))
