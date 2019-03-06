@@ -13,6 +13,7 @@ parser.add_argument('--version')
 parser.add_argument('--flavor')
 parser.add_argument('--arch')
 parser.add_argument('--iso')
+parser.add_argument('--noiso', action='store_true')
 parser.add_argument('--build')
 parser.add_argument('--test')
 parser.add_argument('--alias')
@@ -77,9 +78,10 @@ if args.alias:
 if args.params:
     allargs += ' ' + args.params
 
-allargs += ' BUILD={0} BUILD_SLE={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4} ISO={5}'.format(
-    build, distri, version, flavor, arch, iso)
-
+allargs += ' BUILD={0} BUILD_SLE={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4}'.format(
+    build, distri, version, flavor, arch)
+if not args.noiso:
+    allargs += 'ISO={1}'.format(iso)
 
 print('Command to execute: \n' + allargs)
 if not args.force:
