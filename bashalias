@@ -1,7 +1,8 @@
 alias gco="git checkout"
 alias gpl="git pull"
 alias gph="git push"
-alias gst="git status"
+alias gst="git status -s -b"
+alias glog='git log HEAD --graph --abbrev-commit --full-history --color --pretty=format:"%x1b[31m%h%x09%x1b[32m%d%x1b[0m%x20%s%x20%x1b[33m(%an)%x1b[0m"'
 alias gad="git add ."
 alias gcim="git commit --amend"
 alias gphf="git push -f"
