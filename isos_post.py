@@ -65,7 +65,11 @@ if args.alias:
                             'slurm': 'hpc_slurm_master,hpc_slurm_slave,hpc_slurm_supportserver',
                             'ganglia': 'hpc_ganglia_server,hpc_ganglia_client,hpc_ganglia_supportserver',
                             'pdsh_genders': 'hpc_pdsh_genders_master,hpc_pdsh_genders_slave,hpc_pdsh_genders_supportserver',
-                            'network': 'wicked_advanced_ref,wicked_advanced_sut,wicked_basic_sut,wicked_basic_ref,wicked_startandstop_ref,wicked_startandstop_sut'}
+                            'network': 'wicked_advanced_ref,wicked_advanced_sut,wicked_basic_sut,wicked_basic_ref,wicked_startandstop_ref,wicked_startandstop_sut',
+                            'wicked_advanced' : 'wicked_advanced_ref,wicked_advanced_sut',
+                            'wicked_2nics': 'wicked_2nics_ref,wicked_2nics_sut',
+                            'wicked_basic': 'wicked_basic_ref,wicked_basic_sut',
+                            'wicked_startandstop': 'wicked_startandstop_ref,wicked_startandstop_sut'}
     testsuites = []
     testsuites = args.alias.split(',')
     result_string = ''
@@ -81,7 +85,7 @@ if args.params:
 allargs += ' BUILD={0} BUILD_SLE={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4}'.format(
     build, distri, version, flavor, arch)
 if not args.noiso:
-    allargs += 'ISO={1}'.format(iso)
+    allargs += ' ISO={0}'.format(iso)
 
 print('Command to execute: \n' + allargs)
 if not args.force:
