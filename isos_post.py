@@ -32,11 +32,11 @@ else:
 if args.version:
     version = args.version
 else:
-    version = '15-SP1'
+    version = '12-SP5'
 if args.flavor:
     flavor = args.flavor
 else:
-    flavor = 'Installer-DVD'
+    flavor = 'Server-DVD'
 if args.arch:
     arch = args.arch
 else:
@@ -45,13 +45,16 @@ if args.build:
     build = args.build
 else:
     group_json = requests.get(
-        "https://openqa.suse.de/group_overview/117.json").json()
+        "https://openqa.suse.de/group_overview/170.json").json()
     build = group_json['build_results'][0]['build']
 if args.iso:
     iso = args.iso
 else:
-    iso = '{0}-{1}-{2}-{3}-Build{4}-Media1.iso'.format(
-        distri, version, flavor, arch, build)
+    build_label="Build"
+    if "openqa.opensuse.org" in allargs:
+        build_label="Snapshot"
+    iso = '{0}-{1}-{2}-{3}-{5}{4}-Media1.iso'.format(
+        distri, version, flavor, arch, build,build_label)
 
 if args.test:
     if args.alias:
