@@ -72,7 +72,8 @@ if args.alias:
                             'wicked_advanced' : 'wicked_advanced_ref,wicked_advanced_sut',
                             'wicked_2nics': 'wicked_2nics_ref,wicked_2nics_sut',
                             'wicked_basic': 'wicked_basic_ref,wicked_basic_sut',
-                            'wicked_startandstop': 'wicked_startandstop_ref,wicked_startandstop_sut'}
+                            'wicked_startandstop': 'wicked_startandstop_ref,wicked_startandstop_sut',
+                            'wicked_aggregate': 'wicked_aggregate_ref,wicked_aggregate_sut'}
     testsuites = []
     testsuites = args.alias.split(',')
     result_string = ''
