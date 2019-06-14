@@ -18,6 +18,8 @@ parser.add_argument('--build')
 parser.add_argument('--test')
 parser.add_argument('--alias')
 parser.add_argument('--params')
+parser.add_argument('--nostartafter',action='store_true')
+parser.add_argument('--branch')
 parser.add_argument('--force', action='store_true')
 args = parser.parse_args()
 allargs = '/usr/bin/openqa-client isos post _NOOBSOLETEBUILD=1 '
@@ -86,10 +88,18 @@ if args.alias:
 if args.params:
     allargs += ' ' + args.params
 
-allargs += ' BUILD={0} BUILD_SLE={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4}'.format(
+allargs += ' BUILD={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4}'.format(
     build, distri, version, flavor, arch)
+if "openqa.opensuse.org" not in allargs:
+    allargs += ' BUILD_SLE={0}'.format(build)
 if not args.noiso:
     allargs += ' ISO={0}'.format(iso)
+
+if args.nostartafter:
+    allargs += ' START_AFTER_TEST=\' \''
+
+if args.branch:
+    allargs += ' CASEDIR=https://github.com/asmorodskyi/os-autoinst-distri-opensuse.git#{0}'.format(args.branch)
 
 print('Command to execute: \n' + allargs)
 if not args.force:
