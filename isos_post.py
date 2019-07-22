@@ -6,57 +6,52 @@ import sys
 import requests
 import json
 
+
+def get_job_name(host, job_id):
+    cmd = '/usr/bin/openqa-client --json-output --host %s jobs/%d' % (host, job_id)
+    o_json = json.loads(subprocess.check_output(cmd, shell=True))
+    return o_json['job']['name']
+
+
 parser = argparse.ArgumentParser()
-parser.add_argument('--host')
-parser.add_argument('--distri')
-parser.add_argument('--version')
-parser.add_argument('--flavor')
-parser.add_argument('--arch')
+parser.add_argument('--host', default='https://openqa.suse.de')
+parser.add_argument('--distri', default='SLE')
+parser.add_argument('--version', default='12-SP5')
+parser.add_argument('--flavor', default='Server-DVD')
+parser.add_argument('--arch', default='x86_64')
 parser.add_argument('--iso')
 parser.add_argument('--noiso', action='store_true')
 parser.add_argument('--build')
 parser.add_argument('--test')
 parser.add_argument('--alias')
 parser.add_argument('--params')
-parser.add_argument('--nostartafter',action='store_true')
+parser.add_argument('--nostartafter', action='store_true')
 parser.add_argument('--branch')
+parser.add_argument('--github-user', default='asmorodskyi')
 parser.add_argument('--force', action='store_true')
 args = parser.parse_args()
-allargs = '/usr/bin/openqa-client isos post _NOOBSOLETEBUILD=1 '
-if args.host:
-    allargs += '--host ' + args.host
-else:
-    allargs += '--host https://openqa.suse.de'
-if args.distri:
-    distri = args.distri
-else:
-    distri = 'SLE'
-if args.version:
-    version = args.version
-else:
-    version = '12-SP5'
-if args.flavor:
-    flavor = args.flavor
-else:
-    flavor = 'Server-DVD'
-if args.arch:
-    arch = args.arch
-else:
-    arch = 'x86_64'
+allargs = '/usr/bin/openqa-client --json-output isos post _NOOBSOLETEBUILD=1 '
+allargs += '--host ' + args.host
+distri = args.distri
+version = args.version
+flavor = args.flavor
+arch = args.arch
+
 if args.build:
     build = args.build
 else:
     group_json = requests.get(
         "https://openqa.suse.de/group_overview/170.json").json()
     build = group_json['build_results'][0]['build']
+
 if args.iso:
     iso = args.iso
 else:
-    build_label="Build"
+    build_label = "Build"
     if "openqa.opensuse.org" in allargs:
-        build_label="Snapshot"
+        build_label = "Snapshot"
     iso = '{0}-{1}-{2}-{3}-{5}{4}-Media1.iso'.format(
-        distri, version, flavor, arch, build,build_label)
+        distri, version, flavor, arch, build, build_label)
 
 if args.test:
     if args.alias:
@@ -71,7 +66,7 @@ if args.alias:
                             'ganglia': 'hpc_ganglia_server,hpc_ganglia_client,hpc_ganglia_supportserver',
                             'pdsh_genders': 'hpc_pdsh_genders_master,hpc_pdsh_genders_slave,hpc_pdsh_genders_supportserver',
                             'network': 'wicked_advanced_ref,wicked_advanced_sut,wicked_basic_sut,wicked_basic_ref,wicked_startandstop_ref,wicked_startandstop_sut',
-                            'wicked_advanced' : 'wicked_advanced_ref,wicked_advanced_sut',
+                            'wicked_advanced': 'wicked_advanced_ref,wicked_advanced_sut',
                             'wicked_2nics': 'wicked_2nics_ref,wicked_2nics_sut',
                             'wicked_basic': 'wicked_basic_ref,wicked_basic_sut',
                             'wicked_startandstop': 'wicked_startandstop_ref,wicked_startandstop_sut',
@@ -99,7 +94,7 @@ if args.nostartafter:
     allargs += ' START_AFTER_TEST=\' \''
 
 if args.branch:
-    allargs += ' CASEDIR=https://github.com/asmorodskyi/os-autoinst-distri-opensuse.git#{0}'.format(args.branch)
+    allargs += ' CASEDIR=https://github.com/{0}/os-autoinst-distri-opensuse.git#{1}'.format(args.github_user, args.branch)
 
 print('Command to execute: \n' + allargs)
 if not args.force:
@@ -108,4 +103,14 @@ if not args.force:
         answer = input("Execute [Y/N]? ").lower()
     if answer == 'n':
         sys.exit()
-print(subprocess.check_output(allargs, shell=True))
+o_json = json.loads(subprocess.check_output(allargs, shell=True))
+
+if len(o_json['failed']) > 0:
+    print("Failed Jobs:")
+    for job in o_json['failed']:
+        print("  %s/t%d - Name:%s MSG:%s" % (args.host, job['job_id'], get_job_name(args.host, job['job_id']), job['error_messages']))
+
+if len(o_json['ids']) > 0:
+    print("Jobs:")
+    for job_id in o_json['ids']:
+        print("  %s/t%d - Name:%s" % (args.host, job_id, get_job_name(args.host, job['job_id'])))
