@@ -8,7 +8,8 @@ import json
 
 
 def get_job_name(host, job_id):
-    cmd = '/usr/bin/openqa-client --json-output --host %s jobs/%d' % (host, job_id)
+    cmd = '/usr/bin/openqa-client --json-output --host {} jobs/{}'.format(host, job_id)
+    print('getting job name : {} \n'.format(cmd))
     o_json = json.loads(subprocess.check_output(cmd, shell=True))
     return o_json['job']['name']
 
@@ -105,6 +106,8 @@ if not args.force:
         sys.exit()
 o_json = json.loads(subprocess.check_output(allargs, shell=True))
 
+print(o_json)
+
 if len(o_json['failed']) > 0:
     print("Failed Jobs:")
     for job in o_json['failed']:
@@ -113,4 +116,4 @@ if len(o_json['failed']) > 0:
 if len(o_json['ids']) > 0:
     print("Jobs:")
     for job_id in o_json['ids']:
-        print("  %s/t%d - Name:%s" % (args.host, job_id, get_job_name(args.host, job['job_id'])))
+        print("  %s/t%d - Name:%s" % (args.host, job_id, get_job_name(args.host, job_id)))
