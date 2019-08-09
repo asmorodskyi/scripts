@@ -72,6 +72,12 @@ if args.alias:
                             'wicked_basic': 'wicked_basic_ref,wicked_basic_sut',
                             'wicked_startandstop': 'wicked_startandstop_ref,wicked_startandstop_sut',
                             'wicked_aggregate': 'wicked_aggregate_ref,wicked_aggregate_sut'}
+    if (args.alias == 'list'):
+        print('Aliases:')
+        for key, value in available_testsuites.items():
+            print("  {:20s} => {}".format(key, value))
+        sys.exit(0);
+
     testsuites = []
     testsuites = args.alias.split(',')
     result_string = ''
