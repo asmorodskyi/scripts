@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import subprocess
+from subprocess import CalledProcessError
 import argparse
 import sys
 import requests
@@ -9,10 +10,17 @@ import json
 
 def get_job_name(host, job_id):
     cmd = '/usr/bin/openqa-client --json-output --host {} jobs/{}'.format(host, job_id)
-    print('getting job name : {} \n'.format(cmd))
+    print('getting job name : {}'.format(cmd))
     o_json = json.loads(subprocess.check_output(cmd, shell=True))
     return o_json['job']['name']
 
+def set_job_priority(host, job_id, priority):
+    cmd = 'openqa-client --host {} jobs/{} put --json-data \'{{"priority": {} }}\''.format(host, job_id, priority)
+    print('setting job priority : {}'.format(cmd))
+    try:
+        subprocess.check_output(cmd, shell=True);
+    except CalledProcessError:
+        print('Failed to set priority={} of job {}'.format(priority, job_id));
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--host', default='https://openqa.suse.de')
@@ -28,6 +36,7 @@ parser.add_argument('--alias')
 parser.add_argument('--params')
 parser.add_argument('--nostartafter', action='store_true')
 parser.add_argument('--branch')
+parser.add_argument('--priority', default = None)
 parser.add_argument('--github-user', default='asmorodskyi')
 parser.add_argument('--force', action='store_true')
 args = parser.parse_args()
@@ -118,8 +127,12 @@ if len(o_json['failed']) > 0:
     print("Failed Jobs:")
     for job in o_json['failed']:
         print("  %s/t%d - Name:%s MSG:%s" % (args.host, job['job_id'], get_job_name(args.host, job['job_id']), job['error_messages']))
+        if (args.priority is not None):
+            set_job_priority(args.host, job['job_id'], args.priority)
 
 if len(o_json['ids']) > 0:
     print("Jobs:")
     for job_id in o_json['ids']:
         print("  %s/t%d - Name:%s" % (args.host, job_id, get_job_name(args.host, job_id)))
+        if (args.priority is not None):
+            set_job_priority(args.host, job_id, args.priority)
