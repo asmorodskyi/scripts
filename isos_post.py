@@ -6,21 +6,9 @@ import argparse
 import sys
 import requests
 import json
+import logging
 
-
-def get_job_name(host, job_id):
-    cmd = '/usr/bin/openqa-client --json-output --host {} jobs/{}'.format(host, job_id)
-    print('getting job name : {}'.format(cmd))
-    o_json = json.loads(subprocess.check_output(cmd, shell=True))
-    return o_json['job']['name']
-
-def set_job_priority(host, job_id, priority):
-    cmd = 'openqa-client --host {} jobs/{} put --json-data \'{{"priority": {} }}\''.format(host, job_id, priority)
-    print('setting job priority : {}'.format(cmd))
-    try:
-        subprocess.check_output(cmd, shell=True);
-    except CalledProcessError:
-        print('Failed to set priority={} of job {}'.format(priority, job_id));
+OPENQA_EXE = '/usr/bin/openqa-client --json-output'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--host', default='https://openqa.suse.de')
@@ -33,14 +21,42 @@ parser.add_argument('--noiso', action='store_true')
 parser.add_argument('--build')
 parser.add_argument('--test')
 parser.add_argument('--alias')
+parser.add_argument('--debug', action='store_true')
 parser.add_argument('--params')
 parser.add_argument('--nostartafter', action='store_true')
 parser.add_argument('--branch')
-parser.add_argument('--priority', default = None)
+parser.add_argument('--priority', default=None)
 parser.add_argument('--github-user', default='asmorodskyi')
 parser.add_argument('--force', action='store_true')
 args = parser.parse_args()
-allargs = '/usr/bin/openqa-client --json-output isos post _NOOBSOLETEBUILD=1 '
+
+if args.debug:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.INFO
+
+logging.basicConfig(format='%(levelname)s:%(message)s', level=log_level)
+logger = logging.getLogger(__name__)
+
+
+def get_job_name(host, job_id):
+    cmd = OPENQA_EXE + ' --host {} jobs/{}'.format(host, job_id)
+    logger.debug('getting job name : %s', cmd)
+    o_json = json.loads(subprocess.check_output(cmd, shell=True))
+    return o_json['job']['name']
+
+
+def set_job_priority(host, job_id, priority):
+    cmd = 'openqa-client --host {} jobs/{} put --json-data \'{{"priority": {} }}\''.format(
+        host, job_id, priority)
+    logger.debug('setting job priority : %s', cmd)
+    try:
+        subprocess.check_output(cmd, shell=True)
+    except CalledProcessError:
+        logger.error('Failed to set priority=%s of job %s', priority, job_id)
+
+
+allargs = OPENQA_EXE + ' isos post _NOOBSOLETEBUILD=1 '
 allargs += '--host ' + args.host
 distri = args.distri
 version = args.version
@@ -82,10 +98,10 @@ if args.alias:
                             'wicked_startandstop': 'wicked_startandstop_ref,wicked_startandstop_sut',
                             'wicked_aggregate': 'wicked_aggregate_ref,wicked_aggregate_sut'}
     if (args.alias == 'list'):
-        print('Aliases:')
+        logger.debug('Aliases:')
         for key, value in available_testsuites.items():
-            print("  {:20s} => {}".format(key, value))
-        sys.exit(0);
+            logger.debug("  {:20s} => {}".format(key, value))
+        sys.exit(0)
 
     testsuites = []
     testsuites = args.alias.split(',')
@@ -110,9 +126,10 @@ if args.nostartafter:
     allargs += ' START_AFTER_TEST=\' \''
 
 if args.branch:
-    allargs += ' CASEDIR=https://github.com/{0}/os-autoinst-distri-opensuse.git#{1}'.format(args.github_user, args.branch)
+    allargs += ' CASEDIR=https://github.com/{0}/os-autoinst-distri-opensuse.git#{1}'.format(
+        args.github_user, args.branch)
 
-print('Command to execute: \n' + allargs)
+logger.info('Command to execute: \n' + allargs)
 if not args.force:
     answer = ""
     while answer not in ["y", "n"]:
@@ -121,18 +138,20 @@ if not args.force:
         sys.exit()
 o_json = json.loads(subprocess.check_output(allargs, shell=True))
 
-print(o_json)
+logger.info(o_json)
 
 if len(o_json['failed']) > 0:
-    print("Failed Jobs:")
+    logger.error("Failed Jobs:")
     for job in o_json['failed']:
-        print("  %s/t%d - Name:%s MSG:%s" % (args.host, job['job_id'], get_job_name(args.host, job['job_id']), job['error_messages']))
+        logger.error("  %s/t%d - Name:%s MSG:%s" % (args.host,
+                                                    job['job_id'], get_job_name(args.host, job['job_id']), job['error_messages']))
         if (args.priority is not None):
             set_job_priority(args.host, job['job_id'], args.priority)
 
 if len(o_json['ids']) > 0:
-    print("Jobs:")
+    logger.info("Jobs:")
     for job_id in o_json['ids']:
-        print("  %s/t%d - Name:%s" % (args.host, job_id, get_job_name(args.host, job_id)))
+        logger.info("  %s/t%d - Name:%s" %
+                    (args.host, job_id, get_job_name(args.host, job_id)))
         if (args.priority is not None):
             set_job_priority(args.host, job_id, args.priority)
