@@ -113,7 +113,7 @@ if args.alias:
         allargs += ' TEST=' + result_string[:-1]
 
 if args.params:
-    allargs += ' ' + args.params
+    allargs += ' ' + args.params.replace(',',' ')
 
 allargs += ' BUILD={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4}'.format(
     build, distri, version, flavor, arch)
