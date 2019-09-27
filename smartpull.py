@@ -4,6 +4,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import traceback
 import smtplib
+import socket
 
 logging.basicConfig(format='%(asctime)s -  %(levelname)s:%(message)s',
                     level=logging.INFO, datefmt='%m-%d %H:%M:%S')
@@ -21,11 +22,11 @@ def send_email(msg):
     receivers = ['asmorodskyi@suse.com']
     smtpObj = smtplib.SMTP('relay.suse.de', 25)
     email = '''\
-Subject: [GIT] ERROR
+Subject: [GIT] ERROR - {host}
 From: {_from}
 To: {_to}
 {error}
-'''.format(_from=sender, _to=receivers, error=msg)
+'''.format(_from=sender, _to=receivers, error=msg, host=socket.gethostname())
     smtpObj.sendmail(sender, receivers, email)
 
 
