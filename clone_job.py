@@ -29,4 +29,4 @@ if args.tolocal:
 cmd = cmd.format(first_param, args.frm, args.jobid, params)
 logger.info(cmd)
 
-subprocess.check_output(cmd, shell=True)
+logger.info(subprocess.check_output(cmd, shell=True))
