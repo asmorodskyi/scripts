@@ -9,6 +9,9 @@ logging.basicConfig(format='%(asctime)s -  %(levelname)s:%(message)s',
                     level=logging.INFO, datefmt='%m-%d %H:%M:%S')
 handler = logging.handlers.RotatingFileHandler(
     '/var/log/smartpull/smartpull.log', maxBytes=100*1024*1024, backupCount=50)
+formatter = logging.Formatter(
+    '%(asctime)s -  %(levelname)s:%(message)s', datefmt='%m-%d %H:%M:%S')
+handler.setFormatter(formatter)
 logger = logging.getLogger(__name__)
 logger.addHandler(handler)
 
@@ -46,7 +49,7 @@ def pull_repo(repo_path):
         repo.remote().pull('master')
         logger.info("After pulling changes head pointing to %s", repo.commit())
         if old_branch != "master":
-            logger.info("HEAD was at %s, switching it back",old_branch)
+            logger.info("HEAD was at %s, switching it back", old_branch)
             repo.git.checkout(old_branch)
         if was_dirty:
             logger.info("master was dirty, so reapplying changes")
