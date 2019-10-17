@@ -21,7 +21,11 @@ class SmartRSync(TaskSolver):
                                                         filetype, filename)
                 self.logger.info(
                     'File not found. Will try to download it from %s', target_url)
-                urllib.request.urlretrieve(target_url, full_path)
+                if urllib.request.urlopen(target_url).code == 200:
+                    urllib.request.urlretrieve(target_url, full_path)
+                else:
+                    self.logger.warn(
+                        'Not %s available at source yet', filename)
         except Exception:
             self.handle_error()
         finally:
