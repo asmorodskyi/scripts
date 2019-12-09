@@ -41,5 +41,5 @@ class TaskSolver:
 
     def get_latest_build(self):
         group_json = requests.get(
-            self.OPENQA_URL_BASE + 'group_overview/170.json').json()
+            self.OPENQA_URL_BASE + 'group_overview/170.json', verify=False).json()
         return group_json['build_results'][0]['build']

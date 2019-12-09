@@ -13,8 +13,8 @@ OPENQA_EXE = '/usr/bin/openqa-client --json-output'
 parser = argparse.ArgumentParser()
 parser.add_argument('--host', default='https://openqa.suse.de')
 parser.add_argument('--distri', default='SLE')
-parser.add_argument('--version', default='12-SP5')
-parser.add_argument('--flavor', default='Server-DVD')
+parser.add_argument('--version', default='15-SP2')
+parser.add_argument('--flavor', default='Online')
 parser.add_argument('--arch', default='x86_64')
 parser.add_argument('--iso')
 parser.add_argument('--noiso', action='store_true')
@@ -67,7 +67,7 @@ if args.build:
     build = args.build
 else:
     group_json = requests.get(
-        "https://openqa.suse.de/group_overview/170.json").json()
+        "https://openqa.suse.de/group_overview/262.json").json()
     build = group_json['build_results'][0]['build']
 
 if args.iso:
