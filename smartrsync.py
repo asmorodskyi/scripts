@@ -35,10 +35,11 @@ class SmartRSync(TaskSolver):
 def main():
     solver = SmartRSync('smartrsync')
     latest_build = solver.get_latest_build()
-    hdd_dict = {'filetype': 'hdd', 'filename': 'SLES-12-SP5-x86_64-Build{0}-wicked.qcow2'.format(
-        latest_build)}
-    iso_dict = {'filetype': 'iso', 'filename': 'SLE-12-SP5-Server-DVD-x86_64-Build{0}-Media1.iso'.format(
-        latest_build)}
+    sle_version = '15-SP2'
+    hdd_dict = {'filetype': 'hdd', 'filename': 'SLES-{0}-x86_64-Build{1}-wicked.qcow2'.format(sle_version,
+                                                                                              latest_build)}
+    iso_dict = {'filetype': 'iso', 'filename': 'SLE-{0}-Online-x86_64-Build{1}-Media1.iso'.format(sle_version,
+                                                                                                  latest_build)}
     solver.solve(hdd_dict)
     solver.solve(iso_dict)
 
