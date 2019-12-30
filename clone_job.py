@@ -12,6 +12,8 @@ parser.add_argument('--frm', default='openqa.suse.de')
 parser.add_argument('--params')
 parser.add_argument('--tolocal', action='store_true')
 parser.add_argument('--jobid', required=True)
+parser.add_argument('--branch')
+parser.add_argument('--github-user', default='asmorodskyi')
 
 args = parser.parse_args()
 
@@ -27,6 +29,11 @@ if args.tolocal:
     first_param = 'from'
 
 cmd = cmd.format(first_param, args.frm, args.jobid, params)
+
+if args.branch:
+    cmd += ' CASEDIR=https://github.com/{0}/os-autoinst-distri-opensuse.git#{1}'.format(
+        args.github_user, args.branch)
+
 logger.info(cmd)
 
 logger.info(subprocess.check_output(cmd, shell=True))
