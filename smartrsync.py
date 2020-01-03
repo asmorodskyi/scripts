@@ -2,12 +2,12 @@
 
 import os
 import urllib.request
-from myutils import TaskSolver
+from myutils import TaskHelper
 
 
-class SmartRSync(TaskSolver):
+class SmartRSync(TaskHelper):
 
-    def solve(self, params_dict):
+    def run(self, params_dict):
         try:
             filetype = params_dict['filetype']
             filename = params_dict['filename']
@@ -49,8 +49,8 @@ def main():
                                                                                               latest_build)}
     iso_dict = {'filetype': 'iso', 'filename': 'SLE-{0}-Online-x86_64-Build{1}-Media1.iso'.format(sle_version,
                                                                                                   latest_build)}
-    solver.solve(hdd_dict)
-    solver.solve(iso_dict)
+    solver.run(hdd_dict)
+    solver.run(iso_dict)
 
 
 if __name__ == "__main__":

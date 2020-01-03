@@ -6,7 +6,7 @@ import traceback
 import requests
 
 
-class TaskSolver:
+class TaskHelper:
 
     OPENQA_URL_BASE = 'https://openqa.suse.de/'
 
@@ -21,23 +21,36 @@ class TaskSolver:
         handler.setFormatter(formatter)
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(handler)
-        self.smtpObj = smtplib.SMTP('relay.suse.de', 25)
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            smtp_host = 'relay.suse.de'
+            smtp_port = 25
+            s.connect((smtp_host, int(smtp_port)))
+            s.shutdown(2)
+            self.smtpObj = smtplib.SMTP(smtp_host, smtp_port)
+        except:
+            pass
 
-    def solve(self, params_dict):
+    def run(self, params_dict):
         raise NotImplementedError
 
-    def handle_error(self):
-        error = traceback.format_exc()
+    def handle_error(self, error=''):
+        if not error:
+            error = traceback.format_exc()
         self.logger.error(error)
-        sender = 'asmorodskyi@suse.com'
-        receivers = ['asmorodskyi@suse.com']
-        email = '''\
-    Subject: [{_name}] ERROR - {host}
-    From: {_from}
-    To: {_to}
-    {_error}
-    '''.format(_from=sender, _to=receivers, _error=error, _name=self.name, host=socket.gethostname())
-        self.smtpObj.sendmail(sender, receivers, email)
+        if hasattr(self, 'smtpObj'):
+            sender = 'asmorodskyi@suse.com'
+            receivers = ['asmorodskyi@suse.com']
+            email = '''\
+        Subject: [{_name}] ERROR - {_host}
+        From: {_from}
+        To: {_to}
+        {_error}
+        '''.format(_from=sender, _to=receivers, _error=error, _name=self.name, _host=socket.gethostname())
+            self.smtpObj.sendmail(sender, receivers, email)
+        else:
+            self.logger.warn(
+                'SMTP object not initialized ! So not sending email')
 
     def get_latest_build(self):
         group_json = requests.get(

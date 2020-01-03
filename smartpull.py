@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 from git import Repo
-from myutils import TaskSolver
+from myutils import TaskHelper
 
 
-class SmartPull(TaskSolver):
+class SmartPull(TaskHelper):
 
-    def solve(self, params_dict):
+    def run(self, params_dict):
         try:
             self.logger.info("#### START processing repo %s",
                              params_dict['repo_path'])
@@ -45,7 +45,7 @@ def main():
     lines = file.readlines()
     solver = SmartPull('smartpull')
     for line in lines:
-        solver.solve({'repo_path': line.strip()})
+        solver.run({'repo_path': line.strip()})
 
 
 if __name__ == "__main__":
