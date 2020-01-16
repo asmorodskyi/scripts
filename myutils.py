@@ -4,11 +4,15 @@ import smtplib
 import socket
 import traceback
 import requests
+import subprocess
+from subprocess import CalledProcessError
+import json
 
 
 class TaskHelper:
 
     OPENQA_URL_BASE = 'https://openqa.suse.de/'
+    OPENQA_EXE = '/usr/bin/openqa-client --json-output'
 
     def __init__(self, name):
         self.name = name
@@ -56,3 +60,20 @@ class TaskHelper:
         group_json = requests.get(
             self.OPENQA_URL_BASE + 'group_overview/262.json', verify=False).json()
         return group_json['build_results'][0]['build']
+
+    def shell_exec(self, cmd, log=False, is_json=False):
+        try:
+            if log:
+                self.logger.info(cmd)
+            output = subprocess.check_output(cmd, shell=True)
+            if is_json:
+                o_json = json.loads(output)
+                if log:
+                    self.logger.info("%s", o_json)
+                return o_json
+            else:
+                if log:
+                    self.logger.info("%s", output)
+                return output
+        except subprocess.CalledProcessError:
+            self.handle_error('Command died')
