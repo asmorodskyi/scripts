@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-import subprocess
 import argparse
 import sys
 import urllib.request
