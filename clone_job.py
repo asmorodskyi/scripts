@@ -18,7 +18,7 @@ class SmartClone(TaskHelper):
             args = parser.parse_args()
             cmd = '/usr/share/openqa/script/clone_job.pl --skip-chained-deps --from {}'.format(
                 args.frm)
-            if args.sameinst:
+            if args.tolocal:
                 cmd += ' --within-instance'
             cmd += ' {}'.format(args.jobid)
             if args.params:
