@@ -109,7 +109,7 @@ class IsosPost(TaskHelper):
                     sys.exit()
 
             o_json = self.shell_exec(
-                self.build_string(args), log=True, is_json=True)
+                self.build_exec_string(args), log=True, is_json=True)
 
             if o_json:
                 for job in o_json['failed']:
