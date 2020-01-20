@@ -16,10 +16,11 @@ class SmartClone(TaskHelper):
             parser.add_argument('--branch')
             parser.add_argument('--github-user', default='asmorodskyi')
             args = parser.parse_args()
-            cmd = '/usr/share/openqa/script/clone_job.pl --skip-chained-deps --from {}'.format(
-                args.frm)
+            cmd = '/usr/share/openqa/script/clone_job.pl --skip-chained-deps '
             if args.tolocal:
                 cmd += ' --within-instance'
+            else:
+                cmd += ' --from {}'.format(args.frm)
             cmd += ' {}'.format(args.jobid)
             if args.params:
                 cmd += args.params.replace(',', ' ')
