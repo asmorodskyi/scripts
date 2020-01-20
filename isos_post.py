@@ -41,8 +41,8 @@ class IsosPost(TaskHelper):
         if args.alias:
             tests_list = ''
             for item in args.alias.split(','):
-                if item in available_testsuites.keys():
-                    tests_list += available_testsuites.get(item) + ','
+                if item in self.available_testsuites.keys():
+                    tests_list += self.available_testsuites.get(item) + ','
             if tests_list:
                 exec_str += ' TEST=' + tests_list[:-1]
 
