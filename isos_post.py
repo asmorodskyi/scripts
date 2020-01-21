@@ -8,18 +8,13 @@ from myutils import TaskHelper
 
 class IsosPost(TaskHelper):
 
-    available_testsuites = {'mrsh': 'hpc_mrsh_master,hpc_mrsh_slave,hpc_mrsh_supportserver',
-                            'munge': 'hpc_munge_master,hpc_munge_slave,hpc_munge_supportserver',
-                            'pdsh': 'hpc_pdsh_master,hpc_pdsh_slave,hpc_pdsh_supportserver',
-                            'slurm': 'hpc_slurm_master,hpc_slurm_slave,hpc_slurm_supportserver',
-                            'ganglia': 'hpc_ganglia_server,hpc_ganglia_client,hpc_ganglia_supportserver',
-                            'pdsh_genders': 'hpc_pdsh_genders_master,hpc_pdsh_genders_slave,hpc_pdsh_genders_supportserver',
-                            'network': 'wicked_advanced_ref,wicked_advanced_sut,wicked_basic_sut,wicked_basic_ref,wicked_startandstop_ref,wicked_startandstop_sut',
-                            'wicked_advanced': 'wicked_advanced_ref,wicked_advanced_sut',
-                            'wicked_2nics': 'wicked_2nics_ref,wicked_2nics_sut',
-                            'wicked_basic': 'wicked_basic_ref,wicked_basic_sut',
-                            'wicked_startandstop': 'wicked_startandstop_ref,wicked_startandstop_sut',
-                            'wicked_aggregate': 'wicked_aggregate_ref,wicked_aggregate_sut'}
+    available_testsuites = {'network': 'wicked_advanced_ref,wicked_advanced_sut,wicked_basic_sut,wicked_basic_ref,wicked_startandstop_ref,wicked_startandstop_sut,wicked_ipv6_ref,wicked_ipv6_sut',
+                            'advanced': 'wicked_advanced_ref,wicked_advanced_sut',
+                            '2nics': 'wicked_2nics_ref,wicked_2nics_sut',
+                            'basic': 'wicked_basic_ref,wicked_basic_sut',
+                            'startandstop': 'wicked_startandstop_ref,wicked_startandstop_sut',
+                            'aggregate': 'wicked_aggregate_ref,wicked_aggregate_sut',
+                            'ipv6': 'wicked_ipv6_ref,wicked_ipv6_sut'}
 
     def get_job_name(self, host, job_id):
         cmd = self.OPENQA_EXE + ' --host {} jobs/{}'.format(host, job_id)
