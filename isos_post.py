@@ -118,11 +118,11 @@ class IsosPost(TaskHelper):
                     if (args.priority is not None):
                         self.set_job_priority(args.host, job_id, args.priority)
         except Exception:
-            self.handle_error()
+            self.logger.error(traceback.format_exc())
 
 
 def main():
-    solver = IsosPost('isospost')
+    solver = IsosPost('isospost', log_to_file=False)
     solver.run({})
 
 

@@ -14,17 +14,18 @@ class TaskHelper:
     OPENQA_URL_BASE = 'https://openqa.suse.de/'
     OPENQA_EXE = '/usr/bin/openqa-client --json-output'
 
-    def __init__(self, name):
+    def __init__(self, name, log_to_file=True):
         self.name = name
         logging.basicConfig(format='%(asctime)s -  %(levelname)s:%(message)s',
                             level=logging.INFO, datefmt='%m-%d %H:%M:%S')
-        handler = logging.handlers.RotatingFileHandler(
-            '/var/log/{0}/{0}.log'.format(self.name), maxBytes=100*1024*1024, backupCount=50)
-        formatter = logging.Formatter(
-            '%(asctime)s -  %(levelname)s:%(message)s', datefmt='%m-%d %H:%M:%S')
-        handler.setFormatter(formatter)
         self.logger = logging.getLogger(__name__)
-        self.logger.addHandler(handler)
+        if log_to_file:
+            handler = logging.handlers.RotatingFileHandler(
+                '/var/log/{0}/{0}.log'.format(self.name), maxBytes=100*1024*1024, backupCount=50)
+            formatter = logging.Formatter(
+                '%(asctime)s -  %(levelname)s:%(message)s', datefmt='%m-%d %H:%M:%S')
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             smtp_host = 'relay.suse.de'
