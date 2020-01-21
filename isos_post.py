@@ -108,8 +108,9 @@ class IsosPost(TaskHelper):
                 if answer == 'n':
                     sys.exit()
 
-            o_json = self.shell_exec(
-                self.build_exec_string(args), log=True, is_json=True)
+            cmd = self.build_exec_string(args)
+            self.logger.info(cmd)
+            o_json = self.shell_exec(cmd, log=True, is_json=True)
 
             if o_json:
                 for job in o_json['failed']:
