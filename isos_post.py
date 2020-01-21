@@ -96,6 +96,9 @@ class IsosPost(TaskHelper):
             parser.add_argument('--force', action='store_true')
             args = parser.parse_args()
 
+            cmd = self.build_exec_string(args)
+            self.logger.info(cmd)
+
             if not args.force:
                 answer = ""
                 while answer not in ["y", "n"]:
@@ -103,8 +106,6 @@ class IsosPost(TaskHelper):
                 if answer == 'n':
                     sys.exit()
 
-            cmd = self.build_exec_string(args)
-            self.logger.info(cmd)
             o_json = self.shell_exec(cmd, log=True, is_json=True)
 
             if o_json:

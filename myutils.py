@@ -57,9 +57,15 @@ class TaskHelper:
                 'SMTP object not initialized ! So not sending email')
 
     def get_latest_build(self):
-        group_json = requests.get(
-            self.OPENQA_URL_BASE + 'group_overview/262.json', verify=False).json()
-        return group_json['build_results'][0]['build']
+        build = '1'
+        try:
+            group_json = requests.get(
+                self.OPENQA_URL_BASE + 'group_overview/262.json', verify=False).json()
+            build = group_json['build_results'][0]['build']
+        except Exception as e:
+            self.logger.error("Failed to get build from openQA - %s", e)
+        finally:
+            return build
 
     def shell_exec(self, cmd, log=False, is_json=False):
         try:
