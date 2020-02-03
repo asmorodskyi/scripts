@@ -2,11 +2,13 @@ import logging
 from logging.handlers import RotatingFileHandler
 import smtplib
 import socket
+import os
 import traceback
 import requests
 import subprocess
 from subprocess import CalledProcessError
 import json
+from git import Repo
 
 
 class TaskHelper:
@@ -84,3 +86,16 @@ class TaskHelper:
                 return output
         except subprocess.CalledProcessError:
             self.handle_error('Command died')
+
+
+class GitHelper(TaskHelper):
+
+    def __init__(self):
+        super().__init__("GitHelper", log_to_file=False)
+        self.repo = Repo(os.getcwd())
+        self.remote = None
+        try:
+            if self.repo.remotes.asmorodskyi.exists():
+                self.remote = self.repo.remotes.asmorodskyi
+        except Exception:
+            self.remote = self.repo.remotes.origin
