@@ -1,0 +1,30 @@
+#!/usr/bin/python3
+import sys
+
+sys.path.append('/scripts/')
+from myutils import GitHelper
+
+
+class GitCheckoutNew(GitHelper):
+
+    def run(self, checkout_type, branch_name):
+        if checkout_type == 'n':
+            self.repo.git.checkout('HEAD', b=branch_name)
+            self.repo.git.push('--set-upstream', self.remote, branch_name)
+        elif checkout_type == 'b':
+            self.remote.fetch()
+            self.repo.create_head(branch_name, self.remote.refs[branch_name])
+            self.repo.heads[branch_name].set_tracking_branch(self.remote.refs[branch_name])
+            self.repo.heads[branch_name].checkout()
+
+
+def main():
+    helper = GitCheckoutNew()
+    if len(sys.argv) != 3:
+        helper.logger.error("Must pass branch name!")
+        sys.exit(1)
+    helper.run(sys.argv[1], sys.argv[2])
+
+
+if __name__ == "__main__":
+    main()
