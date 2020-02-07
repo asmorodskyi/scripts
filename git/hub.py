@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 import sys
 
-sys.path.append('/scripts/')
 from myutils import GitHelper
 
 
