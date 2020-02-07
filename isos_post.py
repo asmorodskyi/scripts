@@ -73,7 +73,7 @@ class IsosPost(TaskHelper):
             exec_str += ' ' + args.params.replace(',', ' ')
         return exec_str
 
-    def run(self, params_dict):
+    def run(self):
         try:
             parser = argparse.ArgumentParser()
             parser.add_argument('--host', default=self.OPENQA_URL_BASE)
@@ -123,7 +123,7 @@ class IsosPost(TaskHelper):
 
 def main():
     solver = IsosPost('isospost', log_to_file=False)
-    solver.run({})
+    solver.run()
 
 
 if __name__ == "__main__":

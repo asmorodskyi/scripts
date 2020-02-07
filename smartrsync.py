@@ -7,10 +7,8 @@ from myutils import TaskHelper
 
 class SmartRSync(TaskHelper):
 
-    def run(self, params_dict):
+    def run(self, filetype, filename):
         try:
-            filetype = params_dict['filetype']
-            filename = params_dict['filename']
             full_path = '/var/lib/openqa/factory/{0}/{1}'.format(
                 filetype, filename)
             self.logger.info("#### START Looking for file - %s", full_path)
@@ -45,12 +43,10 @@ def main():
     solver = SmartRSync('smartrsync')
     latest_build = solver.get_latest_build()
     sle_version = '15-SP2'
-    hdd_dict = {'filetype': 'hdd', 'filename': 'SLES-{0}-x86_64-Build{1}-wicked.qcow2'.format(sle_version,
-                                                                                              latest_build)}
-    iso_dict = {'filetype': 'iso', 'filename': 'SLE-{0}-Online-x86_64-Build{1}-Media1.iso'.format(sle_version,
-                                                                                                  latest_build)}
-    solver.run(hdd_dict)
-    solver.run(iso_dict)
+    solver.run(
+        'hdd', 'SLES-{0}-x86_64-Build{1}-wicked.qcow2'.format(sle_version, latest_build))
+    solver.run(
+        'iso', 'SLE-{0}-Online-x86_64-Build{1}-Media1.iso'.format(sle_version, latest_build))
 
 
 if __name__ == "__main__":
