@@ -6,7 +6,7 @@ import argparse
 
 class SmartClone(TaskHelper):
 
-    def run(self, params_dict):
+    def run(self):
         try:
             parser = argparse.ArgumentParser()
             parser.add_argument('--frm', default='openqa.suse.de')
@@ -34,7 +34,7 @@ class SmartClone(TaskHelper):
 
 def main():
     solver = SmartClone('smartclone')
-    solver.run({})
+    solver.run()
 
 
 if __name__ == "__main__":

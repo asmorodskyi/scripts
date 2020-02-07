@@ -5,11 +5,10 @@ from myutils import TaskHelper
 
 class SmartPull(TaskHelper):
 
-    def run(self, params_dict):
+    def run(self, repo_path):
         try:
-            self.logger.info("#### START processing repo %s",
-                             params_dict['repo_path'])
-            repo = Repo(params_dict['repo_path'])
+            self.logger.info("#### START processing repo %s", repo_path)
+            repo = Repo(repo_path)
             self.logger.info("Current branch is %s with commit %s",
                              repo.active_branch, repo.commit())
             was_dirty = False
@@ -36,8 +35,7 @@ class SmartPull(TaskHelper):
         except Exception:
             self.handle_error()
         finally:
-            self.logger.info("#### End processing repo %s",
-                             params_dict['repo_path'])
+            self.logger.info("#### End processing repo %s", repo_path)
 
 
 def main():
@@ -45,7 +43,7 @@ def main():
     lines = file.readlines()
     solver = SmartPull('smartpull')
     for line in lines:
-        solver.run({'repo_path': line.strip()})
+        solver.run(line.strip())
 
 
 if __name__ == "__main__":

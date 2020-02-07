@@ -38,8 +38,6 @@ class TaskHelper:
         except:
             pass
 
-    def run(self, params_dict):
-        raise NotImplementedError
 
     def handle_error(self, error=''):
         if not error:
