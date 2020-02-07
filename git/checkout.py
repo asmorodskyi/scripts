@@ -1,11 +1,10 @@
 #!/usr/bin/python3
 import sys
 
-sys.path.append('/scripts/')
 from myutils import GitHelper
 
 
-class GitCheckoutNew(GitHelper):
+class GitCheckout(GitHelper):
 
     def run(self, checkout_type, branch_name):
         if checkout_type == 'n':
@@ -14,12 +13,13 @@ class GitCheckoutNew(GitHelper):
         elif checkout_type == 'b':
             self.remote.fetch()
             self.repo.create_head(branch_name, self.remote.refs[branch_name])
-            self.repo.heads[branch_name].set_tracking_branch(self.remote.refs[branch_name])
+            self.repo.heads[branch_name].set_tracking_branch(
+                self.remote.refs[branch_name])
             self.repo.heads[branch_name].checkout()
 
 
 def main():
-    helper = GitCheckoutNew()
+    helper = GitCheckout()
     if len(sys.argv) != 3:
         helper.logger.error("Must pass branch name!")
         sys.exit(1)
