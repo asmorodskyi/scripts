@@ -68,9 +68,27 @@ def collapse_nochange(lines):
             i += 1
 
 
+def remove_duplicates(lines):
+    caller_re = re.compile(
+        '\[\d{2}:\d{2}:\d{2}\.\d{3,4}\] (.*\/tests\/.*\.pm:\d{1,4} called.*)')
+    already_matched = set()
+    i = 0
+
+    while i < len(lines):
+        matched = caller_re.match(lines[i])
+        if matched:
+            if matched.group(1) in already_matched:
+                del lines[i]
+            else:
+                already_matched.add(matched.group(1))
+                i += 1
+        else:
+            i += 1
+
+
 def main():
     lines = []
-    with open('/scripts/auto.txt', "r") as f:
+    with open('/auto.txt', "r") as f:
         lines = f.readlines()
         f.close()
 
@@ -85,7 +103,9 @@ def main():
 
     collapse_nochange(lines)
 
-    with open('/scripts/auto_formated.txt', 'w') as f:
+    remove_duplicates(lines)
+
+    with open('/auto_formated.txt', 'w') as f:
         f.writelines(lines)
         f.close()
 
