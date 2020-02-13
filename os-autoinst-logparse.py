@@ -8,7 +8,10 @@ skip_regex = [re.compile('.*Download of .* processed:'),
               re.compile('.*WARNING: check_asserted_screen took'),
               re.compile(
                   '.*WARNING: There is some problem with your environment'),
-              re.compile('.*Migrating (total|remaining) bytes:')]
+              re.compile('.*Migrating (total|remaining) bytes:'),
+              re.compile('.*pointer type \d'),
+              re.compile('.*consoles::serial_screen::read_until'),
+              re.compile('.*testapi::type_string')]
 
 
 def need_to_rm(str):
