@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import re
+from sys import argv
 from decimal import Decimal
 
 skip_regex = [re.compile('.*Download of .* processed:'),
@@ -89,9 +90,34 @@ def remove_duplicates(lines):
             i += 1
 
 
+def shrink_wait_serial(lines):
+    ws_begin_re = re.compile('.*testapi::wait_serial\(')
+    ws_end_re = re.compile('.*testapi::wait_serial:.*: ok')
+
+    i = 0
+    ws_begin = False
+
+    while i < len(lines):
+        if ws_begin:
+            if ws_end_re.match(lines[i]):
+                del lines[i]
+                tmp = lines[i-1][:-1] + ': ok\n'
+                del lines[i-1]
+                lines.insert(i-1, tmp)
+                ws_begin = False
+            else:
+                i += 1
+        else:
+            ws_begin = ws_begin_re.match(lines[i])
+            i += 1
+
+
 def main():
     lines = []
-    with open('/auto.txt', "r") as f:
+    if len(argv) != 2:
+            print("Missing source file")
+            exit(1)
+    with open(argv[1], "r") as f:
         lines = f.readlines()
         f.close()
 
@@ -105,8 +131,8 @@ def main():
             lines[i] = '[{}] {}\n'.format(matched.group(1), matched.group(4))
 
     collapse_nochange(lines)
-
     remove_duplicates(lines)
+    shrink_wait_serial(lines)
 
     with open('/auto_formated.txt', 'w') as f:
         f.writelines(lines)
