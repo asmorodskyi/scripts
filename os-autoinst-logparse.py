@@ -2,6 +2,7 @@
 import re
 from sys import argv
 from decimal import Decimal
+import jinja2
 
 skip_regex = [re.compile('.*Download of .* processed:'),
               re.compile('.*Output of rsync:'),
@@ -43,21 +44,20 @@ def remove_lines(lines):
                 i += 1
 
 
-def collapse_nochange(lines):
-    nochange_re = re.compile(
-        '\[(\d{2}:\d{2}:\d{2}\.\d{3,4})\] no (change|match): (\d{1,3}\.\d)s')
+def collapse_nochange(lines_dict):
+    nochange_re = re.compile('no (change|match): (\d{1,3}\.\d)s')
     nochange_dict = {}
     i = 0
 
-    while i < len(lines):
-        matched = nochange_re.match(lines[i])
+    while i < len(lines_dict):
+        matched = nochange_re.match(lines_dict[i]['msg'])
         if matched:
             if nochange_dict:
-                nochange_dict['end'] = matched.group(3)
+                nochange_dict['end'] = matched.group(2)
             else:
-                nochange_dict['time'] = matched.group(1)
-                nochange_dict['start'] = matched.group(3)
-            del lines[i]
+                nochange_dict['time'] = lines_dict[i]['time']
+                nochange_dict['start'] = matched.group(2)
+            del lines_dict[i]
         else:
             if nochange_dict:
                 delta = 0
@@ -66,23 +66,22 @@ def collapse_nochange(lines):
                         nochange_dict.get('start')) - Decimal(nochange_dict.get('end'))
                 else:
                     delta = 1
-                lines.insert(
-                    i, '[{}] no match during {}s\n'.format(nochange_dict.get('time'), delta))
+                lines_dict.insert(i, {'time': nochange_dict.get(
+                    'time'), 'msg': 'no match during {}s\n'.format(delta)})
                 nochange_dict = {}
             i += 1
 
 
-def remove_duplicates(lines):
-    caller_re = re.compile(
-        '\[\d{2}:\d{2}:\d{2}\.\d{3,4}\] (.*\/tests\/.*\.pm:\d{1,4} called.*)')
+def remove_duplicates(lines_dict):
+    caller_re = re.compile('(.*\/tests\/.*\.pm:\d{1,4} called.*)')
     already_matched = set()
     i = 0
 
-    while i < len(lines):
-        matched = caller_re.match(lines[i])
+    while i < len(lines_dict):
+        matched = caller_re.match(lines_dict[i]['msg'])
         if matched:
             if matched.group(1) in already_matched:
-                del lines[i]
+                del lines_dict[i]
             else:
                 already_matched.add(matched.group(1))
                 i += 1
@@ -90,52 +89,61 @@ def remove_duplicates(lines):
             i += 1
 
 
-def shrink_wait_serial(lines):
+def shrink_wait_serial(lines_dict):
     ws_begin_re = re.compile('.*testapi::wait_serial\(')
     ws_end_re = re.compile('.*testapi::wait_serial:.*: ok')
 
     i = 0
     ws_begin = False
 
-    while i < len(lines):
+    while i < len(lines_dict):
         if ws_begin:
-            if ws_end_re.match(lines[i]):
-                del lines[i]
-                tmp = lines[i-1][:-1] + ': ok\n'
-                del lines[i-1]
-                lines.insert(i-1, tmp)
+            if ws_end_re.match(lines_dict[i]['msg']):
+                del lines_dict[i]
+                lines_dict[i-1]['msg'] = lines_dict[i-1]['msg'][:-1] + ': ok'
                 ws_begin = False
             else:
                 i += 1
         else:
-            ws_begin = ws_begin_re.match(lines[i])
+            ws_begin = ws_begin_re.match(lines_dict[i]['msg'])
             i += 1
 
 
 def main():
     lines = []
     if len(argv) != 2:
-            print("Missing source file")
-            exit(1)
+        print("Missing source file")
+        exit(1)
     with open(argv[1], "r") as f:
         lines = f.readlines()
         f.close()
 
     remove_lines(lines)
 
+    lines_dict = []
     log_line_re = re.compile(
         "\[\d{4}-\d{2}-\d{2}T(\d{2}:\d{2}:\d{2}\.\d{3,4}) CET\] \[(debug|info|warn|error)\] (\[pid:\d{1,5}\])?(.*)")
     for i in range(len(lines)):
         matched = log_line_re.match(lines[i])
         if matched:
-            lines[i] = '[{}] {}\n'.format(matched.group(1), matched.group(4))
+            lines_dict.append(
+                {'time': matched.group(1), 'msg': matched.group(4)})
+        else:
+            lines_dict.append({'msg': lines[i]})
 
-    collapse_nochange(lines)
-    remove_duplicates(lines)
-    shrink_wait_serial(lines)
+    del lines[:]
 
-    with open('/auto_formated.txt', 'w') as f:
-        f.writelines(lines)
+    collapse_nochange(lines_dict)
+    remove_duplicates(lines_dict)
+    shrink_wait_serial(lines_dict)
+
+    templateEnv = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(searchpath="./"))
+    template = templateEnv.get_template("template.html")
+    outputText = template.render(items=lines_dict)
+
+    with open('/auto.html', 'w') as f:
+        f.writelines(outputText)
         f.close()
 
 

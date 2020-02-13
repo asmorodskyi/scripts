@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.time_class {color: red;}
+.msg_class {color: blue;}
+</style>
+</head>
+<body>
+{% for item in items %}
+<span class="time_class">{{item.time}}</span><span class="msg_class">{{item.msg}}</span><br/>
+{% endfor %}
+</body>
+</html>
