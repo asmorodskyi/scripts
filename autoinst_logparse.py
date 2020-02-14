@@ -153,9 +153,7 @@ def main():
         f.close()
 
     filtered_lines = remove_lines(lines)
-
     lines_dict = generate_dict(filtered_lines)
-
     collapse_nochange(lines_dict)
     remove_duplicates(lines_dict)
     shrink_wait_serial(lines_dict)

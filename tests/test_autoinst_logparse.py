@@ -1,6 +1,7 @@
 import pytest
 from autoinst_logparse import remove_lines
 from autoinst_logparse import generate_dict
+from autoinst_logparse import collapse_nochange
 
 
 @pytest.fixture
@@ -30,3 +31,32 @@ def test_generate_dict(lines):
             cnt_time += 1
         assert 'class' not in line
     assert cnt_time == 40
+
+
+def test_collapse_nochange():
+    list_dict = [{'time': '1:1:1.1', 'msg': '1tttttttttttt'},
+                 {'time': '1:1:2.1', 'msg': 'no change: 9.1s'},
+                 {'time': '1:1:3.1', 'msg': 'no change: 8.1s'},
+                 {'time': '1:1:5.1', 'msg': 'no match: 7.1s'},
+                 {'time': '1:1:6.1', 'msg': 'no match: 6.1s'},
+                 {'time': '1:1:7.1', 'msg': '2tttttttttttt'},
+                 {'time': '1:1:8.1', 'msg': 'no match: 7.1s'},
+                 {'time': '1:1:9.1', 'msg': '3tttttttttttt'},
+                 {'time': '1:1:10.1', 'msg': '4tttttttttttt'},
+                 {'time': '1:1:11.1', 'msg': 'no match: 7.1s'},
+                 {'time': '1:1:12.1', 'msg': 'no match: 2.1s'},
+                 {'time': '1:1:13.1', 'msg': '5tttttttttttt'}
+                 ]
+    expected_dict = [{'time': '1:1:1.1', 'msg': '1tttttttttttt'},
+                     {'time': '1:1:2.1', 'msg': 'no match during 3.0s\n'},
+                     {'time': '1:1:7.1', 'msg': '2tttttttttttt'},
+                     {'time': '1:1:8.1', 'msg': 'no match during 1s\n'},
+                     {'time': '1:1:9.1', 'msg': '3tttttttttttt'},
+                     {'time': '1:1:10.1', 'msg': '4tttttttttttt'},
+                     {'time': '1:1:11.1', 'msg': 'no match during 5.0s\n'},
+                     {'time': '1:1:13.1', 'msg': '5tttttttttttt'}
+                     ]
+    collapse_nochange(list_dict)
+    assert len(expected_dict) == 8
+    for i in range(len(expected_dict)):
+        assert list_dict[i] == expected_dict[i]
