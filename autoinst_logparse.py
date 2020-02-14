@@ -4,48 +4,42 @@ from sys import argv
 from decimal import Decimal
 import jinja2
 
-skip_regex = [re.compile('.*Download of .* processed:'),
-              re.compile('.*Output of rsync:'),
-              re.compile('.*Waiting for \d{1,2} attempts'),
-              re.compile('.*WARNING: check_asserted_screen took'),
+skip_regex = [re.compile(r'.*Download of .* processed:'),
+              re.compile(r'.*Output of rsync:'),
+              re.compile(r'.*Waiting for \d{1,2} attempts'),
+              re.compile(r'.*WARNING: check_asserted_screen took'),
               re.compile(
-                  '.*WARNING: There is some problem with your environment'),
-              re.compile('.*Migrating (total|remaining) bytes:'),
-              re.compile('.*pointer type \d'),
-              re.compile('.*consoles::serial_screen::read_until'),
-              re.compile('.*testapi::type_string')]
-
-
-def need_to_rm(str):
-    for regex in skip_regex:
-        if regex.match(str):
-            return True
-    return False
+                  r'.*WARNING: There is some problem with your environment'),
+              re.compile(r'.*Migrating (total|remaining) bytes:'),
+              re.compile(r'.*pointer type \d'),
+              re.compile(r'.*consoles::serial_screen::read_until'),
+              re.compile(r'.*testapi::type_string')]
 
 
 def remove_lines(lines):
-    last_matched = False
-    i = 0
+    def need_to_keep(str):
+        for regex in skip_regex:
+            if regex.match(str):
+                return False
+        return True
+    last_skiped = False
+    filtered_lines = []
     next_line_re = re.compile(
-        "\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3,4} CET\].*")
+        r'\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3,4} CET\].*')
 
-    while i < len(lines):
-        if need_to_rm(lines[i]):
-            del lines[i]
-            last_matched = True
+    for line in lines:
+        if need_to_keep(line):
+            if last_skiped and next_line_re.match(line):
+                last_skiped = False
+            if not last_skiped:
+                filtered_lines.append(line)
         else:
-            if last_matched:
-                if next_line_re.match(lines[i]):
-                    last_matched = False
-                    i += 1
-                else:
-                    del lines[i]
-            else:
-                i += 1
+            last_skiped = True
+    return filtered_lines
 
 
 def collapse_nochange(lines_dict):
-    nochange_re = re.compile('no (change|match): (\d{1,3}\.\d)s')
+    nochange_re = re.compile(r'no (change|match): (\d{1,3}\.\d)s')
     nochange_dict = {}
     i = 0
 
@@ -73,7 +67,7 @@ def collapse_nochange(lines_dict):
 
 
 def remove_duplicates(lines_dict):
-    caller_re = re.compile('(.*\/tests\/.*\.pm:\d{1,4} called.*)')
+    caller_re = re.compile(r'(.*\/tests\/.*\.pm:\d{1,4} called.*)')
     already_matched = set()
     i = 0
 
@@ -96,8 +90,8 @@ def remove_duplicates(lines_dict):
 
 
 def shrink_wait_serial(lines_dict):
-    ws_begin_re = re.compile('.*testapi::wait_serial\(')
-    ws_end_re = re.compile('.*testapi::wait_serial:.*: ok')
+    ws_begin_re = re.compile(r'.*testapi::wait_serial\(')
+    ws_end_re = re.compile(r'.*testapi::wait_serial:.*: ok')
 
     i = 0
     ws_begin = False
@@ -116,11 +110,11 @@ def shrink_wait_serial(lines_dict):
 
 
 def apply_attributes(lines_dict):
-    wait_re = re.compile('.*testapi::wait_serial')
-    type_string_re = re.compile('.*consoles::serial_screen::type_string')
+    wait_re = re.compile(r'.*testapi::wait_serial')
+    type_string_re = re.compile(r'.*consoles::serial_screen::type_string')
     script_run_re = re.compile(
-        '.*(testapi::script_run|distribution::script_output)')
-    starting_re = re.compile('.*\|\|\| (starting|finished)')
+        r'.*(testapi::script_run|distribution::script_output)')
+    starting_re = re.compile(r'.*\|\|\| (starting|finished)')
 
     for line in lines_dict:
         if wait_re.match(line['msg']):
@@ -144,20 +138,18 @@ def main():
         lines = f.readlines()
         f.close()
 
-    remove_lines(lines)
+    filtered_lines = remove_lines(lines)
 
     lines_dict = []
     log_line_re = re.compile(
-        "\[\d{4}-\d{2}-\d{2}T(\d{2}:\d{2}:\d{2}\.\d{3,4}) CET\] \[(debug|info|warn|error)\] (>>>|<<<|:::)?(\[pid:\d{1,5}\])?(.*)")
-    for i in range(len(lines)):
-        matched = log_line_re.match(lines[i])
+        r'\[\d{4}-\d{2}-\d{2}T(\d{2}:\d{2}:\d{2}\.\d{3,4}) CET\] \[(debug|info|warn|error)\] (>>>|<<<|:::)?(\[pid:\d{1,5}\])?(.*)')
+    for i in range(len(filtered_lines)):
+        matched = log_line_re.match(filtered_lines[i])
         if matched:
             lines_dict.append(
                 {'time': matched.group(1), 'msg': matched.group(5)})
         else:
-            lines_dict.append({'msg': lines[i]})
-
-    del lines[:]
+            lines_dict.append({'msg': filtered_lines[i]})
 
     collapse_nochange(lines_dict)
     remove_duplicates(lines_dict)
