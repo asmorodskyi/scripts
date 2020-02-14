@@ -78,15 +78,21 @@ def remove_duplicates(lines_dict):
     i = 0
 
     while i < len(lines_dict):
-        matched = caller_re.match(lines_dict[i]['msg'])
-        if matched:
-            if matched.group(1) in already_matched:
-                del lines_dict[i]
-            else:
-                already_matched.add(matched.group(1))
-                i += 1
+        if 'time' not in lines_dict[i]:
+            lines_dict[i-1]['msg'] = '{}<br/>{}'.format(
+                lines_dict[i-1]['msg'], lines_dict[i]['msg'])
+            del lines_dict[i]
         else:
-            i += 1
+            matched = caller_re.match(lines_dict[i]['msg'])
+            if matched:
+                if matched.group(1) in already_matched:
+                    del lines_dict[i]
+                else:
+                    already_matched.add(matched.group(1))
+                    lines_dict[i]['class'] = 'cC'
+                    i += 1
+            else:
+                i += 1
 
 
 def shrink_wait_serial(lines_dict):
@@ -109,15 +115,24 @@ def shrink_wait_serial(lines_dict):
             i += 1
 
 
-def shrink_notime_lines(lines_dict):
-    i = 0
-    while i < len(lines_dict):
-        if 'time' not in lines_dict[i]:
-            lines_dict[i-1]['msg'] = '{}<br/>{}'.format(
-                lines_dict[i-1]['msg'], lines_dict[i]['msg'])
-            del lines_dict[i]
-        else:
-            i += 1
+def apply_attributes(lines_dict):
+    wait_re = re.compile('.*testapi::wait_serial')
+    type_string_re = re.compile('.*consoles::serial_screen::type_string')
+    script_run_re = re.compile(
+        '.*(testapi::script_run|distribution::script_output)')
+    starting_re = re.compile('.*\|\|\| (starting|finished)')
+
+    for line in lines_dict:
+        if wait_re.match(line['msg']):
+            line['class'] = 'wC'
+        elif type_string_re.match(line['msg']):
+            line['class'] = 'tyC'
+        elif script_run_re.match(line['msg']):
+            line['class'] = 'rC'
+        elif starting_re.match(line['msg']):
+            line['class'] = 'sC'
+        elif 'class' not in line:
+            line['class'] = 'mC'
 
 
 def main():
@@ -147,7 +162,7 @@ def main():
     collapse_nochange(lines_dict)
     remove_duplicates(lines_dict)
     shrink_wait_serial(lines_dict)
-    shrink_notime_lines(lines_dict)
+    apply_attributes(lines_dict)
 
     templateEnv = jinja2.Environment(
         loader=jinja2.FileSystemLoader(searchpath="./"))

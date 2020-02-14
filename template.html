@@ -2,8 +2,13 @@
 <html>
 <head>
 <style>
-.time_class {color: rgb(51, 153, 255);font-family: sans-serif;}
-.msg_class {color: rgb(102, 102, 153);font-family:cursive; font-weight: bold;}
+.tiC {color: rgb(51, 153, 255);font-family: sans-serif;}
+.mC {color: rgb(102, 102, 153);font-family:cursive; font-weight: bold;}
+.wC{color: rgb(102, 102, 153);font-family:cursive;}
+.tyC{color: rgb(191, 64, 128);font-family:cursive;}
+.rC{color: rgb(0, 128, 43);font-family:cursive; font-weight: bold;}
+.cC{color: rgb(0, 128, 43);font-family:cursive; font-weight: bold;font-size: 16px;}
+.sC{color: rgb(255, 170, 0);font-family:cursive; font-weight: bold;font-size: 16px;}
 table, th, td {
   border: 3px solid black;
   border-collapse: collapse;
@@ -12,18 +17,4 @@ table, th, td {
 }
 </style>
 </head>
-<body>
-<table>
-<tr>
-<th>Time</th>
-<th>Message</th>
-</tr>
-{% for item in items %}
-<tr>
-<td class="time_class">{{item.time}}</td>
-<td class="msg_class">{{item.msg}}</td>
-</tr>
-{% endfor %}
-</table>
-</body>
-</html>
+<body><table><tr><th>Time</th><th>Message</th></tr>{% for item in items %}<tr><td class="tiC">{{item.time}}</td><td class="{{item.class}}">{{item.msg}}</td></tr>{% endfor %}</table></body></html>
