@@ -56,7 +56,7 @@ def test_collapse_nochange():
                      {'time': '1:1:11.1', 'msg': 'no match during 5.0s\n'},
                      {'time': '1:1:13.1', 'msg': '5tttttttttttt'}
                      ]
-    collapse_nochange(list_dict)
+    collapsed_dict = collapse_nochange(list_dict)
     assert len(expected_dict) == 8
     for i in range(len(expected_dict)):
-        assert list_dict[i] == expected_dict[i]
+        assert expected_dict[i] == collapsed_dict[i]

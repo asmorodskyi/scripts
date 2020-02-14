@@ -41,17 +41,16 @@ def remove_lines(lines):
 def collapse_nochange(lines_dict):
     nochange_re = re.compile(r'no (change|match): (\d{1,3}\.\d)s')
     nochange_dict = {}
-    i = 0
+    collapsed_dict = []
 
-    while i < len(lines_dict):
-        matched = nochange_re.match(lines_dict[i]['msg'])
+    for line in lines_dict:
+        matched = nochange_re.match(line['msg'])
         if matched:
             if nochange_dict:
                 nochange_dict['end'] = matched.group(2)
             else:
-                nochange_dict['time'] = lines_dict[i]['time']
+                nochange_dict['time'] = line['time']
                 nochange_dict['start'] = matched.group(2)
-            del lines_dict[i]
         else:
             if nochange_dict:
                 delta = 0
@@ -60,10 +59,11 @@ def collapse_nochange(lines_dict):
                         nochange_dict.get('start')) - Decimal(nochange_dict.get('end'))
                 else:
                     delta = 1
-                lines_dict.insert(i, {'time': nochange_dict.get(
+                collapsed_dict.append({'time': nochange_dict.get(
                     'time'), 'msg': 'no match during {}s\n'.format(delta)})
                 nochange_dict = {}
-            i += 1
+            collapsed_dict.append(line)
+    return collapsed_dict
 
 
 def remove_duplicates(lines_dict):
