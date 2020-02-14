@@ -129,6 +129,20 @@ def apply_attributes(lines_dict):
             line['class'] = 'mC'
 
 
+def generate_dict(lines):
+    lines_dict = []
+    log_line_re = re.compile(
+        r'\[\d{4}-\d{2}-\d{2}T(\d{2}:\d{2}:\d{2}\.\d{3,4}) CET\] \[(debug|info|warn|error)\] (>>>|<<<|:::)?(\[pid:\d{1,5}\])?(.*)')
+    for line in lines:
+        matched = log_line_re.match(line)
+        if matched:
+            lines_dict.append(
+                {'time': matched.group(1), 'msg': matched.group(5)})
+        else:
+            lines_dict.append({'msg': line})
+    return lines_dict
+
+
 def main():
     lines = []
     if len(argv) != 2:
@@ -140,16 +154,7 @@ def main():
 
     filtered_lines = remove_lines(lines)
 
-    lines_dict = []
-    log_line_re = re.compile(
-        r'\[\d{4}-\d{2}-\d{2}T(\d{2}:\d{2}:\d{2}\.\d{3,4}) CET\] \[(debug|info|warn|error)\] (>>>|<<<|:::)?(\[pid:\d{1,5}\])?(.*)')
-    for i in range(len(filtered_lines)):
-        matched = log_line_re.match(filtered_lines[i])
-        if matched:
-            lines_dict.append(
-                {'time': matched.group(1), 'msg': matched.group(5)})
-        else:
-            lines_dict.append({'msg': filtered_lines[i]})
+    lines_dict = generate_dict(filtered_lines)
 
     collapse_nochange(lines_dict)
     remove_duplicates(lines_dict)
