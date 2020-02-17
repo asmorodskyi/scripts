@@ -2,6 +2,7 @@ import pytest
 from autoinst_logparse import remove_lines
 from autoinst_logparse import generate_dict
 from autoinst_logparse import collapse_nochange
+from autoinst_logparse import remove_duplicates
 
 
 @pytest.fixture
@@ -60,3 +61,24 @@ def test_collapse_nochange():
     assert len(expected_dict) == 8
     for i in range(len(expected_dict)):
         assert expected_dict[i] == collapsed_dict[i]
+
+
+def test_remove_duplicates():
+    collapsed_dict = [{'time': '1:1:1.1', 'msg': '1tt'},
+                      {'msg': '2mmm'},
+                      {'time': '1:1:7.1', 'msg': '3tt'},
+                      {'time': '1:1:8.1', 'msg': '/tests/yyy.pm:1 called'},
+                      {'time': '1:1:9.1', 'msg': '4tt'},
+                      {'time': '1:1:10.1', 'msg': '/tests/yyy.pm:1 called'},
+                      {'time': '1:1:11.1', 'msg': '/tests/yyy.pm:2 called'},
+                      {'time': '1:1:11.1', 'msg': '/tests/wwyy.pm:1 called'},
+                      {'time': '1:1:11.1', 'msg': '/tests/wwyy.pm:1 called'},
+                      {'time': '1:1:13.1', 'msg': '5tt'},
+                      {'msg': '5tt'},
+                      {'msg': '5tt'}
+                      ]
+    nodup_dict = remove_duplicates(collapsed_dict)
+    assert len(nodup_dict) == 7
+    assert nodup_dict[0]['msg'] == '1tt<br/>2mmm'
+    for line in nodup_dict:
+        assert 'time' in line
