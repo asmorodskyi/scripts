@@ -147,9 +147,9 @@ def generate_dict(lines):
 
 class LogParse(TaskHelper):
 
-    def run(self, jobid):
+    def run(self, jobid, url_base):
         bytes_lines = urllib.request.urlopen(
-            'https://openqa.suse.de/tests/{}/file/autoinst-log.txt'.format(jobid)).readlines()
+            '{}/tests/{}/file/autoinst-log.txt'.format(url_base, jobid)).readlines()
         lines = [x.decode('UTF-8') for x in bytes_lines]
         filtered_lines = remove_lines(lines)
         lines_dict = generate_dict(filtered_lines)
@@ -170,12 +170,12 @@ class LogParse(TaskHelper):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--frm', default='openqa.suse.de')
+    parser.add_argument('--frm', default='https://openqa.suse.de')
     parser.add_argument('--jobid', required=True)
     args = parser.parse_args()
 
     runner = LogParse('logparse', log_to_file=False)
-    runner.run(args.jobid)
+    runner.run(args.jobid, args.frm)
 
 
 if __name__ == "__main__":
