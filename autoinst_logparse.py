@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 import re
-from sys import argv
 from decimal import Decimal
 import jinja2
+from myutils import TaskHelper
+import argparse
+import urllib.request
 
 skip_regex = [re.compile(r'.*Download of .* processed:'),
               re.compile(r'.*Output of rsync:'),
@@ -143,30 +145,37 @@ def generate_dict(lines):
     return lines_dict
 
 
+class LogParse(TaskHelper):
+
+    def run(self, jobid):
+        bytes_lines = urllib.request.urlopen(
+            'https://openqa.suse.de/tests/{}/file/autoinst-log.txt'.format(jobid)).readlines()
+        lines = [x.decode('UTF-8') for x in bytes_lines]
+        filtered_lines = remove_lines(lines)
+        lines_dict = generate_dict(filtered_lines)
+        collapse_nochange(lines_dict)
+        remove_duplicates(lines_dict)
+        shrink_wait_serial(lines_dict)
+        apply_attributes(lines_dict)
+
+        templateEnv = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(searchpath="./"))
+        template = templateEnv.get_template("template.html")
+        outputText = template.render(items=lines_dict)
+
+        with open('/auto.html', 'w') as f:
+            f.writelines(outputText)
+            f.close()
+
+
 def main():
-    lines = []
-    if len(argv) != 2:
-        print("Missing source file")
-        exit(1)
-    with open(argv[1], "r") as f:
-        lines = f.readlines()
-        f.close()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--frm', default='openqa.suse.de')
+    parser.add_argument('--jobid', required=True)
+    args = parser.parse_args()
 
-    filtered_lines = remove_lines(lines)
-    lines_dict = generate_dict(filtered_lines)
-    collapse_nochange(lines_dict)
-    remove_duplicates(lines_dict)
-    shrink_wait_serial(lines_dict)
-    apply_attributes(lines_dict)
-
-    templateEnv = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(searchpath="./"))
-    template = templateEnv.get_template("template.html")
-    outputText = template.render(items=lines_dict)
-
-    with open('/auto.html', 'w') as f:
-        f.writelines(outputText)
-        f.close()
+    runner = LogParse('logparse', log_to_file=False)
+    runner.run(args.jobid)
 
 
 if __name__ == "__main__":
