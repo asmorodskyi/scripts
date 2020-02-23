@@ -69,18 +69,20 @@ def collapse_nochange(lines_dict):
 
 
 def remove_duplicates(lines_dict):
-    i = 0
-    while i < len(lines_dict):
-        if 'time' not in lines_dict[i]:
-            lines_dict[i-1]['msg'] = '{}<br/>{}'.format(
-                lines_dict[i-1]['msg'], lines_dict[i]['msg'])
-            del lines_dict[i]
+    with_time_dict = []
+    bufr = None
+    for line in lines_dict:
+        if 'time' in line:
+            if bufr:
+                with_time_dict.append(bufr)
+            bufr = line
         else:
-            i += 1
+            bufr['msg'] = '{}<br/>{}'.format(bufr['msg'], line['msg'])
+    with_time_dict.append(bufr)
     caller_re = re.compile(r'(.*\/tests\/.*\.pm:\d{1,4} called.*)')
     already_matched = set()
     nodup_dict = []
-    for line in lines_dict:
+    for line in with_time_dict:
         matched = caller_re.match(line['msg'])
         if matched:
             if matched.group(1) not in already_matched:
@@ -168,7 +170,6 @@ class LogParse(TaskHelper):
             f.writelines(outputText)
             f.close()
 
-
         templateEnv = jinja2.Environment(
             loader=jinja2.FileSystemLoader(searchpath="./"))
         template = templateEnv.get_template("template.html")
@@ -187,6 +188,7 @@ def main():
 
     runner = LogParse('logparse', log_to_file=False)
     runner.run(args.jobid, args.frm)
+
 
 if __name__ == "__main__":
     main()
