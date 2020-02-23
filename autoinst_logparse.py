@@ -69,26 +69,27 @@ def collapse_nochange(lines_dict):
 
 
 def remove_duplicates(lines_dict):
-    caller_re = re.compile(r'(.*\/tests\/.*\.pm:\d{1,4} called.*)')
-    already_matched = set()
     i = 0
-
     while i < len(lines_dict):
         if 'time' not in lines_dict[i]:
             lines_dict[i-1]['msg'] = '{}<br/>{}'.format(
                 lines_dict[i-1]['msg'], lines_dict[i]['msg'])
             del lines_dict[i]
         else:
-            matched = caller_re.match(lines_dict[i]['msg'])
-            if matched:
-                if matched.group(1) in already_matched:
-                    del lines_dict[i]
-                else:
-                    already_matched.add(matched.group(1))
-                    lines_dict[i]['class'] = 'cC'
-                    i += 1
-            else:
-                i += 1
+            i += 1
+    caller_re = re.compile(r'(.*\/tests\/.*\.pm:\d{1,4} called.*)')
+    already_matched = set()
+    nodup_dict = []
+    for line in lines_dict:
+        matched = caller_re.match(line['msg'])
+        if matched:
+            if matched.group(1) not in already_matched:
+                already_matched.add(matched.group(1))
+                line['class'] = 'cC'
+                nodup_dict.append(line)
+        else:
+            nodup_dict.append(line)
+    return nodup_dict
 
 
 def shrink_wait_serial(lines_dict):
@@ -153,10 +154,20 @@ class LogParse(TaskHelper):
         lines = [x.decode('UTF-8') for x in bytes_lines]
         filtered_lines = remove_lines(lines)
         lines_dict = generate_dict(filtered_lines)
-        collapse_nochange(lines_dict)
-        remove_duplicates(lines_dict)
-        shrink_wait_serial(lines_dict)
-        apply_attributes(lines_dict)
+        collapsed_dict = collapse_nochange(lines_dict)
+        nodup_dict = remove_duplicates(collapsed_dict)
+        shrink_wait_serial(nodup_dict)
+        apply_attributes(nodup_dict)
+
+        templateEnv = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(searchpath="./"))
+        template = templateEnv.get_template("template.html")
+        outputText = template.render(items=nodup_dict)
+
+        with open('/auto.html', 'w') as f:
+            f.writelines(outputText)
+            f.close()
+
 
         templateEnv = jinja2.Environment(
             loader=jinja2.FileSystemLoader(searchpath="./"))
@@ -176,7 +187,6 @@ def main():
 
     runner = LogParse('logparse', log_to_file=False)
     runner.run(args.jobid, args.frm)
-
 
 if __name__ == "__main__":
     main()
