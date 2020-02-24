@@ -25,7 +25,7 @@ def remove_lines(lines):
                 return False
         return True
     last_skiped = False
-    filtered_lines = []
+    filtered = []
     next_line_re = re.compile(
         r'\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3,4} CET\].*')
 
@@ -34,64 +34,64 @@ def remove_lines(lines):
             if last_skiped and next_line_re.match(line):
                 last_skiped = False
             if not last_skiped:
-                filtered_lines.append(line)
+                filtered.append(line)
         else:
             last_skiped = True
-    return filtered_lines
+    return filtered
 
 
-def collapse_nochange(lines_dict):
+def collapse_nochange(lines):
     nochange_re = re.compile(r'no (change|match): (\d{1,3}\.\d)s')
-    nochange_dict = {}
-    collapsed_dict = []
+    summary = {}
+    collapsed = []
 
-    for line in lines_dict:
-        matched = nochange_re.match(line['msg'])
-        if matched:
-            if nochange_dict:
-                nochange_dict['end'] = matched.group(2)
+    for line in lines:
+        m = nochange_re.match(line['msg'])
+        if m:
+            if summary:
+                summary['end'] = m.group(2)
             else:
-                nochange_dict['time'] = line['time']
-                nochange_dict['start'] = matched.group(2)
+                summary['time'] = line['time']
+                summary['start'] = m.group(2)
         else:
-            if nochange_dict:
+            if summary:
                 delta = 0
-                if nochange_dict.get('end'):
+                if summary.get('end'):
                     delta = Decimal(
-                        nochange_dict.get('start')) - Decimal(nochange_dict.get('end'))
+                        summary.get('start')) - Decimal(summary.get('end'))
                 else:
                     delta = 1
-                collapsed_dict.append({'time': nochange_dict.get(
+                collapsed.append({'time': summary.get(
                     'time'), 'msg': 'no match during {}s\n'.format(delta)})
-                nochange_dict = {}
-            collapsed_dict.append(line)
-    return collapsed_dict
+                summary = {}
+            collapsed.append(line)
+    return collapsed
 
 
-def remove_duplicates(lines_dict):
-    with_time_dict = []
+def remove_duplicates(lines):
+    with_time = []
     bufr = None
-    for line in lines_dict:
+    for line in lines:
         if 'time' in line:
             if bufr:
-                with_time_dict.append(bufr)
+                with_time.append(bufr)
             bufr = line
         else:
             bufr['msg'] = '{}<br/>{}'.format(bufr['msg'], line['msg'])
-    with_time_dict.append(bufr)
+    with_time.append(bufr)
     caller_re = re.compile(r'(.*\/tests\/.*\.pm:\d{1,4} called.*)')
     already_matched = set()
-    nodup_dict = []
-    for line in with_time_dict:
-        matched = caller_re.match(line['msg'])
-        if matched:
-            if matched.group(1) not in already_matched:
-                already_matched.add(matched.group(1))
+    nodup = []
+    for line in with_time:
+        m = caller_re.match(line['msg'])
+        if m:
+            if m.group(1) not in already_matched:
+                already_matched.add(m.group(1))
                 line['class'] = 'cC'
-                nodup_dict.append(line)
+                nodup.append(line)
         else:
-            nodup_dict.append(line)
-    return nodup_dict
+            nodup.append(line)
+    return nodup
 
 
 def shrink_wait_serial(lines_dict):
@@ -114,7 +114,7 @@ def shrink_wait_serial(lines_dict):
             i += 1
 
 
-def apply_attributes(lines_dict):
+def set_css_class(lines_dict):
     wait_re = re.compile(r'.*testapi::wait_serial')
     type_string_re = re.compile(r'.*consoles::serial_screen::type_string')
     script_run_re = re.compile(
@@ -139,10 +139,10 @@ def generate_dict(lines):
     log_line_re = re.compile(
         r'\[\d{4}-\d{2}-\d{2}T(\d{2}:\d{2}:\d{2}\.\d{3,4}) CET\] \[(debug|info|warn|error)\] (>>>|<<<|:::)?(\[pid:\d{1,5}\])?(.*)')
     for line in lines:
-        matched = log_line_re.match(line)
-        if matched:
+        m = log_line_re.match(line)
+        if m:
             lines_dict.append(
-                {'time': matched.group(1), 'msg': matched.group(5)})
+                {'time': m.group(1), 'msg': m.group(5)})
         else:
             lines_dict.append({'msg': line})
     return lines_dict
@@ -151,32 +151,23 @@ def generate_dict(lines):
 class LogParse(TaskHelper):
 
     def run(self, jobid, url_base):
-        bytes_lines = urllib.request.urlopen(
+        raw_log = urllib.request.urlopen(
             '{}/tests/{}/file/autoinst-log.txt'.format(url_base, jobid)).readlines()
-        lines = [x.decode('UTF-8') for x in bytes_lines]
-        filtered_lines = remove_lines(lines)
-        lines_dict = generate_dict(filtered_lines)
-        collapsed_dict = collapse_nochange(lines_dict)
-        nodup_dict = remove_duplicates(collapsed_dict)
-        shrink_wait_serial(nodup_dict)
-        apply_attributes(nodup_dict)
+        str_lines = [x.decode('UTF-8') for x in raw_log]
+        filtered = remove_lines(str_lines)
+        lines_dict = generate_dict(filtered)
+        collapsed = collapse_nochange(lines_dict)
+        nodup = remove_duplicates(collapsed)
+        shrink_wait_serial(nodup)
+        set_css_class(nodup)
 
-        templateEnv = jinja2.Environment(
+        jinjaEnv = jinja2.Environment(
             loader=jinja2.FileSystemLoader(searchpath="./"))
-        template = templateEnv.get_template("template.html")
-        outputText = template.render(items=nodup_dict)
+        autoinst_template = jinjaEnv.get_template("autoinst_log_template.html")
+        cool_log = autoinst_template.render(items=nodup)
 
         with open('/auto.html', 'w') as f:
-            f.writelines(outputText)
-            f.close()
-
-        templateEnv = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(searchpath="./"))
-        template = templateEnv.get_template("template.html")
-        outputText = template.render(items=lines_dict)
-
-        with open('/auto.html', 'w') as f:
-            f.writelines(outputText)
+            f.writelines(cool_log)
             f.close()
 
 
