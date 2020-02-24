@@ -27,7 +27,7 @@ def remove_lines(lines):
     last_skiped = False
     filtered = []
     next_line_re = re.compile(
-        r'\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3,4} CET\].*')
+        r'\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3,4} (CET|UTC)\].*')
 
     for line in lines:
         if need_to_keep(line):
@@ -79,7 +79,7 @@ def remove_duplicates(lines):
         else:
             bufr['msg'] = '{}<br/>{}'.format(bufr['msg'], line['msg'])
     with_time.append(bufr)
-    caller_re = re.compile(r'(.*\/tests\/.*\.pm:\d{1,4} called.*)')
+    caller_re = re.compile(r'(.*tests\/.*\.pm:\d{1,4} called.*)')
     already_matched = set()
     nodup = []
     for line in with_time:
@@ -137,12 +137,12 @@ def set_css_class(lines_dict):
 def generate_dict(lines):
     lines_dict = []
     log_line_re = re.compile(
-        r'\[\d{4}-\d{2}-\d{2}T(\d{2}:\d{2}:\d{2}\.\d{3,4}) CET\] \[(debug|info|warn|error)\] (>>>|<<<|:::)?(\[pid:\d{1,5}\])?(.*)')
+        r'\[\d{4}-\d{2}-\d{2}T(\d{2}:\d{2}:\d{2}\.\d{3,4}) (CET|UTC)\] \[(debug|info|warn|error)\] (>>>|<<<|:::)?(\[pid:\d{1,5}\])?(.*)')
     for line in lines:
         m = log_line_re.match(line)
         if m:
             lines_dict.append(
-                {'time': m.group(1), 'msg': m.group(5)})
+                {'time': m.group(1), 'msg': m.group(6)})
         else:
             lines_dict.append({'msg': line})
     return lines_dict
