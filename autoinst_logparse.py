@@ -5,6 +5,7 @@ import jinja2
 from myutils import TaskHelper
 import argparse
 import urllib.request
+import webbrowser
 
 skip_regex = [re.compile(r'.*Download of .* processed:'),
               re.compile(r'.*Output of rsync:'),
@@ -166,9 +167,12 @@ class LogParse(TaskHelper):
         autoinst_template = jinjaEnv.get_template("autoinst_log_template.html")
         cool_log = autoinst_template.render(items=nodup)
 
-        with open('/auto.html', 'w') as f:
+        m = re.compile(r'http(s)://(.*)').match(url_base)
+        resulting_file = '/tmp/{}_{}.html'.format(m.group(2), jobid)
+        with open(resulting_file, 'w') as f:
             f.writelines(cool_log)
             f.close()
+        webbrowser.get('firefox').open_new_tab(resulting_file)
 
 
 def main():
