@@ -67,18 +67,21 @@ def test_remove_duplicates():
     collapsed_dict = [{'time': '1:1:1.1', 'msg': '1tt'},
                       {'msg': '2mmm'},
                       {'time': '1:1:7.1', 'msg': '3tt'},
-                      {'time': '1:1:8.1', 'msg': '/tests/yyy.pm:1 called'},
+                      {'time': '1:1:8.1', 'msg': 'tests/yyy.pm:1 called'},
                       {'time': '1:1:9.1', 'msg': '4tt'},
-                      {'time': '1:1:10.1', 'msg': '/tests/yyy.pm:1 called'},
-                      {'time': '1:1:11.1', 'msg': '/tests/yyy.pm:2 called'},
-                      {'time': '1:1:11.1', 'msg': '/tests/wwyy.pm:1 called'},
-                      {'time': '1:1:11.1', 'msg': '/tests/wwyy.pm:1 called'},
-                      {'time': '1:1:13.1', 'msg': '5tt'},
+                      {'time': '1:1:10.1', 'msg': 'tests/yyy.pm:1 called'},
+                      {'time': '1:1:11.1', 'msg': 'tests/yyy.pm:2 called'},
+                      {'time': '1:1:12.1', 'msg': 'tests/wwyy.pm:1 called'},
+                      {'time': '1:1:13.1', 'msg': 'lib/wwyy.pm:1 called'},
+                      {'time': '1:1:14.1', 'msg': 'lib/wwyy.pm:1 called'},
+                      {'time': '1:1:15.1', 'msg': 'lib/wwyy.pm:2 called'},
+                      {'time': '1:1:16.1', 'msg': 'tests/wwyy.pm:1 called'},
+                      {'time': '1:1:17.1', 'msg': '5tt'},
                       {'msg': '5tt'},
                       {'msg': '5tt'}
                       ]
     nodup_dict = remove_duplicates(collapsed_dict)
-    assert len(nodup_dict) == 7
+    assert len(nodup_dict) == 9
     assert nodup_dict[0]['msg'] == '1tt<br/>2mmm'
     for line in nodup_dict:
         assert 'time' in line
