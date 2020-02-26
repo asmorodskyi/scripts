@@ -80,7 +80,7 @@ def remove_duplicates(lines):
         else:
             bufr['msg'] = '{}<br/>{}'.format(bufr['msg'], line['msg'])
     with_time.append(bufr)
-    caller_re = re.compile(r'(.*tests\/.*\.pm:\d{1,4} called.*)')
+    caller_re = re.compile(r'((tests|lib)\/.*\.pm:\d{1,4} called.*)')
     already_matched = set()
     nodup = []
     for line in with_time:
@@ -152,9 +152,14 @@ def generate_dict(lines):
 class LogParse(TaskHelper):
 
     def run(self, jobid, url_base):
-        raw_log = urllib.request.urlopen(
-            '{}/tests/{}/file/autoinst-log.txt'.format(url_base, jobid)).readlines()
-        str_lines = [x.decode('UTF-8') for x in raw_log]
+        if jobid == '0':
+            with open('/test', 'r') as f:
+                str_lines = f.readlines()
+                f.close()
+        else:
+            raw_log = urllib.request.urlopen(
+                '{}/tests/{}/file/autoinst-log.txt'.format(url_base, jobid)).readlines()
+            str_lines = [x.decode('UTF-8') for x in raw_log]
         filtered = remove_lines(str_lines)
         lines_dict = generate_dict(filtered)
         collapsed = collapse_nochange(lines_dict)
