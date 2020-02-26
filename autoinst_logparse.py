@@ -123,16 +123,17 @@ def set_css_class(lines_dict):
     starting_re = re.compile(r'.*\|\|\| (starting|finished)')
 
     for line in lines_dict:
-        if wait_re.match(line['msg']):
-            line['class'] = 'wC'
-        elif type_string_re.match(line['msg']):
-            line['class'] = 'tyC'
-        elif script_run_re.match(line['msg']):
-            line['class'] = 'rC'
-        elif starting_re.match(line['msg']):
-            line['class'] = 'sC'
-        elif 'class' not in line:
-            line['class'] = 'mC'
+        if 'class' not in line:
+            if wait_re.match(line['msg']):
+                line['class'] = 'wC'
+            elif type_string_re.match(line['msg']):
+                line['class'] = 'tyC'
+            elif script_run_re.match(line['msg']):
+                line['class'] = 'rC'
+            elif starting_re.match(line['msg']):
+                line['class'] = 'sC'
+            else:
+                line['class'] = 'mC'
 
 
 def generate_dict(lines):
