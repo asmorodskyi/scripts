@@ -95,24 +95,25 @@ def remove_duplicates(lines):
     return nodup
 
 
-def shrink_wait_serial(lines_dict):
+def shrink_wait_serial(lines):
     ws_begin_re = re.compile(r'.*testapi::wait_serial\(')
     ws_end_re = re.compile(r'.*testapi::wait_serial:.*: ok')
 
-    i = 0
-    ws_begin = False
+    shrinked = []
+    bufr = None
 
-    while i < len(lines_dict):
-        if ws_begin:
-            if ws_end_re.match(lines_dict[i]['msg']):
-                del lines_dict[i]
-                lines_dict[i-1]['msg'] = lines_dict[i-1]['msg'][:-1] + ': ok'
-                ws_begin = False
-            else:
-                i += 1
+    for line in lines:
+        if bufr:
+            if ws_end_re.match(line['msg']):
+                line['msg'] = bufr
+                bufr = None
+            shrinked.append(line)
         else:
-            ws_begin = ws_begin_re.match(lines_dict[i]['msg'])
-            i += 1
+            if ws_begin_re.match(line['msg']):
+                bufr = line['msg'][:-1] + ': ok'
+            else:
+                shrinked.append(line)
+    return shrinked
 
 
 def set_css_class(lines_dict):
@@ -165,15 +166,15 @@ class LogParse(TaskHelper):
         lines_dict = generate_dict(filtered)
         collapsed = collapse_nochange(lines_dict)
         nodup = remove_duplicates(collapsed)
-        shrink_wait_serial(nodup)
-        set_css_class(nodup)
+        shrinked = shrink_wait_serial(nodup)
+        set_css_class(shrinked)
 
         jinjaEnv = jinja2.Environment(
             loader=jinja2.FileSystemLoader(searchpath="./"))
         autoinst_template = jinjaEnv.get_template("autoinst_log_template.html")
-        cool_log = autoinst_template.render(items=nodup)
+        cool_log = autoinst_template.render(items=shrinked)
 
-        m = re.compile(r'http(s)://(.*)').match(url_base)
+        m = re.compile(r'^http(s)?://(.*)').match(url_base)
         resulting_file = '/tmp/{}_{}.html'.format(m.group(2), jobid)
         with open(resulting_file, 'w') as f:
             f.writelines(cool_log)

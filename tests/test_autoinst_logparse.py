@@ -3,6 +3,7 @@ from autoinst_logparse import remove_lines
 from autoinst_logparse import generate_dict
 from autoinst_logparse import collapse_nochange
 from autoinst_logparse import remove_duplicates
+from autoinst_logparse import shrink_wait_serial
 
 
 @pytest.fixture
@@ -85,3 +86,21 @@ def test_remove_duplicates():
     assert nodup_dict[0]['msg'] == '1tt<br/>2mmm'
     for line in nodup_dict:
         assert 'time' in line
+
+
+def test_shrink_wait_serial():
+    nodup = [
+        {'msg': ' +++ setup notes +++', 'time': '16:15:25.0908'},
+        {'msg': ' Running on openqaw...) x86_64)', 'time': '16:15:25.0908'},
+        {'msg': ' testapi::script_run(cmd="systemctl enable serial-getty\\@hvc1; systemctl start serial-getty\\@hvc1", output="", quiet=1, timeout=undef)', 'time': '16:17:07.421'},
+        {'msg': ' testapi::wait_serial(quiet=1, regexp="# ", timeout=90, expect_not_found=0, no_regex=1, buffer_size=undef, record_output=undef)', 'time': '16:17:07.828'},
+        {'msg': 'testapi::wait_serial: # : ok', 'time': '16:17:07.422'},
+        {'msg': ' Running on openqaw...) x86_64)', 'time': '16:15:25.0908'},
+        {'msg': ' testapi::wait_serial(quiet=1, regexp="# ", timeout=90, expect_not_found=0, record_output=undef, no_regex=1, buffer_size=undef)', 'time': '16:17:07.836'},
+        {'msg': ' testapi::wait_serial: # : ok', 'time': '16:17:07.837'},
+        {'msg': ' +++ setup notes +++', 'time': '16:15:25.0908'}
+    ]
+    shrinked = shrink_wait_serial(nodup)
+    assert len(shrinked) == 7
+    for line in shrinked:
+        assert 'testapi::wait_serial: # : ok' not in line['msg']
