@@ -18,14 +18,14 @@ class TaskHelper:
 
     def __init__(self, name, log_to_file=True):
         self.name = name
-        custom_formatter = logzero.LogFormatter(
-            fmt='%(color)s[%(asctime)s %(module)s:%(lineno)d] %(message)s %(end_color)s')
         if log_to_file:
             self.logger = logzero.setup_logger(
-                name=name, logfile='/var/log/{0}/{0}.log'.format(self.name), formatter=custom_formatter)
+                name=name, logfile='/var/log/{0}/{0}.log'.format(self.name), formatter=logzero.LogFormatter(
+            fmt='%(color)s[%(asctime)s %(module)s:%(lineno)d]%(end_color)s %(message)s',datefmt='%H:%M:%S'))
         else:
             self.logger = logzero.setup_logger(
-                name=name, formatter=custom_formatter)
+                name=name, formatter=logzero.LogFormatter(
+            fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             smtp_host = 'relay.suse.de'
