@@ -1,4 +1,4 @@
-import logging
+import logzero
 from logging.handlers import RotatingFileHandler
 import smtplib
 import socket
@@ -18,16 +18,14 @@ class TaskHelper:
 
     def __init__(self, name, log_to_file=True):
         self.name = name
-        logging.basicConfig(format='%(asctime)s -  %(levelname)s:%(message)s',
-                            level=logging.INFO, datefmt='%m-%d %H:%M:%S')
-        self.logger = logging.getLogger(__name__)
         if log_to_file:
-            handler = logging.handlers.RotatingFileHandler(
-                '/var/log/{0}/{0}.log'.format(self.name), maxBytes=100*1024*1024, backupCount=50)
-            formatter = logging.Formatter(
-                '%(asctime)s -  %(levelname)s:%(message)s', datefmt='%m-%d %H:%M:%S')
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
+            self.logger = logzero.setup_logger(
+                name=name, logfile='/var/log/{0}/{0}.log'.format(self.name), formatter=logzero.LogFormatter(
+            fmt='%(color)s[%(asctime)s %(module)s:%(lineno)d]%(end_color)s %(message)s',datefmt='%H:%M:%S'))
+        else:
+            self.logger = logzero.setup_logger(
+                name=name, formatter=logzero.LogFormatter(
+            fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             smtp_host = 'relay.suse.de'
@@ -37,7 +35,6 @@ class TaskHelper:
             self.smtpObj = smtplib.SMTP(smtp_host, smtp_port)
         except:
             pass
-
 
     def handle_error(self, error=''):
         if not error:

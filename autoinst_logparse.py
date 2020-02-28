@@ -159,23 +159,33 @@ class LogParse(TaskHelper):
                 str_lines = f.readlines()
                 f.close()
         else:
-            raw_log = urllib.request.urlopen(
-                '{}/tests/{}/file/autoinst-log.txt'.format(url_base, jobid)).readlines()
+            url_full = '{}/tests/{}/file/autoinst-log.txt'.format(
+                url_base, jobid)
+            self.logger.info('String with url- {}'.format(url_full))
+            raw_log = urllib.request.urlopen(url_full).readlines()
             str_lines = [x.decode('UTF-8') for x in raw_log]
+            self.logger.info('%d lines read', len(str_lines))
         filtered = remove_lines(str_lines)
+        self.logger.info('%d after remove_lines', len(filtered))
         lines_dict = generate_dict(filtered)
+        self.logger.info('%d after generate_dict', len(lines_dict))
         collapsed = collapse_nochange(lines_dict)
+        self.logger.info('%d after collapse_nochange', len(collapsed))
         nodup = remove_duplicates(collapsed)
+        self.logger.info('%d after remove_duplicates', len(nodup))
         shrinked = shrink_wait_serial(nodup)
+        self.logger.info('%d after shrink_wait_serial', len(shrinked))
         set_css_class(shrinked)
+        self.logger.info('%d after set_css_class', len(shrinked))
 
         jinjaEnv = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(searchpath="./"))
+            loader=jinja2.FileSystemLoader(searchpath="/scripts/"))
         autoinst_template = jinjaEnv.get_template("autoinst_log_template.html")
         cool_log = autoinst_template.render(items=shrinked)
 
         m = re.compile(r'^http(s)?://(.*)').match(url_base)
         resulting_file = '/tmp/{}_{}.html'.format(m.group(2), jobid)
+        self.logger.info('Write results into %s', resulting_file)
         with open(resulting_file, 'w') as f:
             f.writelines(cool_log)
             f.close()
