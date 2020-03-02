@@ -16,7 +16,7 @@ class SmartClone(TaskHelper):
             parser.add_argument('--branch')
             parser.add_argument('--github-user', default='asmorodskyi')
             args = parser.parse_args()
-            cmd = '/usr/share/openqa/script/clone_job.pl --skip-chained-deps '
+            cmd = '/usr/share/openqa/script/clone_job.pl --skip-chained-deps --parental-inheritance'
             if args.winst:
                 cmd += ' --within-instance {}'.format(args.frm)
             else:
