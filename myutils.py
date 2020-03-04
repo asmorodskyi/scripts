@@ -21,11 +21,11 @@ class TaskHelper:
         if log_to_file:
             self.logger = logzero.setup_logger(
                 name=name, logfile='/var/log/{0}/{0}.log'.format(self.name), formatter=logzero.LogFormatter(
-            fmt='%(color)s[%(asctime)s %(module)s:%(lineno)d]%(end_color)s %(message)s',datefmt='%H:%M:%S'))
+                    fmt='%(color)s[%(asctime)s %(module)s:%(lineno)d]%(end_color)s %(message)s', datefmt='%d-%m %H:%M:%S'))
         else:
             self.logger = logzero.setup_logger(
                 name=name, formatter=logzero.LogFormatter(
-            fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
+                    fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             smtp_host = 'relay.suse.de'
