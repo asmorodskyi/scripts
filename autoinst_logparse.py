@@ -79,6 +79,7 @@ def remove_duplicates(lines):
             bufr = line
         else:
             bufr['msg'] = '{}<br/>{}'.format(bufr['msg'], line['msg'])
+            bufr['multiline'] = 1
     with_time.append(bufr)
     caller_re = re.compile(r'((tests|lib)\/.*\.pm:\d{1,4} called.*)')
     already_matched = set()

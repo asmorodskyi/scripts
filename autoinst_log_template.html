@@ -1,6 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="stylesheet" href="/scripts/html_cache/bootstrap.min.css">
+
 <style>
 .tiC {color: rgb(51, 153, 255);font-family: sans-serif;}
 .mC {color: rgb(102, 102, 153);font-family:cursive; font-weight: bold;}
@@ -14,7 +18,34 @@ table, th, td {
   border-collapse: collapse;
   font-size: 14px;
 }
-}
 </style>
 </head>
-<body><table><tr><th>Time</th><th>Message</th></tr>{% for item in items %}<tr><td class="tiC">{{item.time}}</td><td class="{{item.class}}">{{item.msg}}</td></tr>{% endfor %}</table></body></html>
+<body><table><tr><th>Time</th><th>Message</th></tr>{% for item in items %}<tr><td class="tiC">{{item.time}}</td>
+{%if item.multiline %}
+<td>
+<div class="accordion" id="accordion{{loop.index}}">
+<div class="card">
+    <div class="card-header" id="heading{{loop.index}}">
+      <p class="mb-0">
+        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse{{loop.index}}" aria-expanded="true" aria-controls="collapse{{loop.index}}">
+          Test
+        </button>
+      </p>
+    </div>
+
+    <div id="collapse{{loop.index}}" class="collapse" aria-labelledby="heading{{loop.index}}" data-parent="#accordion{{loop.index}}">
+      <div class="card-body">
+        {{item.msg}}
+      </div>
+    </div>
+  </div>
+</div>
+</td>
+{% else %}
+<td class="{{item.class}}">{{item.msg}}</td>
+{%endif%}
+</tr>{% endfor %}</table>
+<script src="/scripts/html_cache/jquery-3.3.1.slim.min.js"></script>
+<script src="/scripts/html_cache/popper.min.js"></script>
+<script src="/scripts/html_cache/bootstrap.min.js"></script>
+</body></html>
