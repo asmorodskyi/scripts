@@ -26,7 +26,7 @@ class SmartClone(TaskHelper):
             if args.params:
                 cmd += ' {}'.format(args.params.replace(',', ' '))
             if not args.keepworker:
-                cmd += 'WORKER_CLASS=qemu_x86_64 '
+                cmd += ' WORKER_CLASS=qemu_x86_64 '
             if args.branch:
                 cmd += ' CASEDIR=https://github.com/{0}/os-autoinst-distri-opensuse.git#{1}'.format(
                     args.github_user, args.branch)
