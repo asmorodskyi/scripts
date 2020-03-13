@@ -156,6 +156,27 @@ def generate_dict(lines):
     return lines_dict
 
 
+def delete_upload_log(lines):
+    record_info_re = re.compile(
+        r'testapi::record_info\(title\=\"Upload file\"')
+    script_run_re = re.compile(r'testapi::script_run\(')
+    script_output_re = re.compile(r'distribution::script_output\(')
+    i = 0
+    ri_matched = False
+    sr_matched = False
+    while i < len(lines):
+        if record_info_re.match(lines[i]['msg']):
+            ri_matched = True
+        elif ri_matched and script_run_re.matched(lines[i]['msg']):
+            sr_matched = True
+        elif sr_matched and script_output_re.match(lines[i]['msg']):
+            del lines[i]
+        else:
+            ri_matched = False
+            sr_matched = False
+            i += 1
+
+
 class LogParse(TaskHelper):
 
     def run(self, jobid, url_base, verbose):
@@ -182,6 +203,9 @@ class LogParse(TaskHelper):
         self.logger.info('%d after shrink_wait_serial', len(shrinked))
         set_css_class(shrinked, verbose)
         self.logger.info('%d after set_css_class', len(shrinked))
+        if not verbose:
+            delete_upload_log(shrinked)
+            self.logger.info('%d after delete_upload_log', len(shrinked))
 
         jinjaEnv = jinja2.Environment(
             loader=jinja2.FileSystemLoader(searchpath="/scripts/"))
