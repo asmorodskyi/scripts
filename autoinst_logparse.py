@@ -19,7 +19,12 @@ skip_regex = [re.compile(r'.*Download of .* processed:'),
               re.compile(r'.*testapi::type_string')]
 
 
-def remove_lines(lines):
+def remove_lines(lines, verbose):
+    if not verbose:
+        skip_regex.append(re.compile(r'.*testapi::wait_serial'))
+        skip_regex.append(re.compile(
+            r'.*consoles::serial_screen::type_string'))
+
     def need_to_keep(str):
         for regex in skip_regex:
             if regex.match(str):
@@ -116,7 +121,7 @@ def shrink_wait_serial(lines):
     return shrinked
 
 
-def set_css_class(lines_dict):
+def set_css_class(lines_dict, verbose):
     wait_re = re.compile(r'.*testapi::wait_serial')
     type_string_re = re.compile(r'.*consoles::serial_screen::type_string')
     script_run_re = re.compile(
@@ -125,9 +130,9 @@ def set_css_class(lines_dict):
 
     for line in lines_dict:
         if 'class' not in line:
-            if wait_re.match(line['msg']):
+            if verbose and wait_re.match(line['msg']):
                 line['class'] = 'wC'
-            elif type_string_re.match(line['msg']):
+            elif verbose and type_string_re.match(line['msg']):
                 line['class'] = 'tyC'
             elif script_run_re.match(line['msg']):
                 line['class'] = 'rC'
@@ -153,7 +158,7 @@ def generate_dict(lines):
 
 class LogParse(TaskHelper):
 
-    def run(self, jobid, url_base):
+    def run(self, jobid, url_base, verbose):
         if jobid == '0':
             with open('/test', 'r') as f:
                 str_lines = f.readlines()
@@ -165,7 +170,7 @@ class LogParse(TaskHelper):
             raw_log = urllib.request.urlopen(url_full).readlines()
             str_lines = [x.decode('UTF-8') for x in raw_log]
             self.logger.info('%d lines read', len(str_lines))
-        filtered = remove_lines(str_lines)
+        filtered = remove_lines(str_lines, verbose)
         self.logger.info('%d after remove_lines', len(filtered))
         lines_dict = generate_dict(filtered)
         self.logger.info('%d after generate_dict', len(lines_dict))
@@ -175,7 +180,7 @@ class LogParse(TaskHelper):
         self.logger.info('%d after remove_duplicates', len(nodup))
         shrinked = shrink_wait_serial(nodup)
         self.logger.info('%d after shrink_wait_serial', len(shrinked))
-        set_css_class(shrinked)
+        set_css_class(shrinked, verbose)
         self.logger.info('%d after set_css_class', len(shrinked))
 
         jinjaEnv = jinja2.Environment(
@@ -196,10 +201,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--frm', default='https://openqa.suse.de')
     parser.add_argument('--jobid', required=True)
+    parser.add_argument('--verbose', action='store_true', default=False)
     args = parser.parse_args()
 
     runner = LogParse('logparse', log_to_file=False)
-    runner.run(args.jobid, args.frm)
+    runner.run(args.jobid, args.frm, args.verbose)
 
 
 if __name__ == "__main__":
