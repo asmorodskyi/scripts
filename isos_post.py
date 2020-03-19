@@ -10,7 +10,6 @@ class IsosPost(TaskHelper):
 
     available_testsuites = {'network': 'wicked_advanced_ref,wicked_advanced_sut,wicked_basic_sut,wicked_basic_ref,wicked_startandstop_ref,wicked_startandstop_sut,wicked_ipv6_ref,wicked_ipv6_sut',
                             'advanced': 'wicked_advanced_ref,wicked_advanced_sut',
-                            '2nics': 'wicked_2nics_ref,wicked_2nics_sut',
                             'basic': 'wicked_basic_ref,wicked_basic_sut',
                             'startandstop': 'wicked_startandstop_ref,wicked_startandstop_sut',
                             'aggregate': 'wicked_aggregate_ref,wicked_aggregate_sut',

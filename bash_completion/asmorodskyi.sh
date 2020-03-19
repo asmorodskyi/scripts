@@ -21,6 +21,16 @@ _isos_post() {
     --flavor)
         COMPREPLY=($(compgen -W "Online Azure-BYOS  EC2-HVM-ARM" -- ${cur}))
         ;;
+    --arch)
+        COMPREPLY=($(compgen -W "x86 aarch64 ppc64le" -- ${cur}))
+        ;;
+    --alias)
+        COMPREPLY=($(compgen -W "network advanced basic startandstop aggregate ipv6" -- ${cur}))
+        ;;
+    --branch)
+        openqa_branches="$(cd /var/lib/openqa/share/tests/sle/;git branch | tr -d "*" | tr -d " ")"
+        COMPREPLY=($(compgen -W $openqa_branches -- ${cur}))
+        ;;
     esac
 }
 
