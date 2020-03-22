@@ -34,4 +34,26 @@ _isos_post() {
     esac
 }
 
+_job_clone() {
+    local cur
+    COMPREPLY=()
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev="${COMP_WORDS[COMP_CWORD - 1]}"
+    opts="--frm --params --winst --jobid --branch --keepworker --github-user"
+    if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]]; then
+        COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
+        return 0
+    fi
+    case "${prev}" in
+    --frm)
+        COMPREPLY=($(compgen -W "https://openqa.suse.de http://autobot" -- ${cur}))
+        ;;
+    --branch)
+        openqa_branches="$(cd /var/lib/openqa/share/tests/sle/;git branch | tr -d "*" | tr -d " ")"
+        COMPREPLY=($(compgen -W $openqa_branches -- ${cur}))
+        ;;
+    esac
+}
+
 complete -F _isos_post isos_post
+complete -F _job_clone job_clone
