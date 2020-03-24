@@ -14,7 +14,7 @@ class SmartClone(TaskHelper):
             parser.add_argument('--winst', action='store_true')
             parser.add_argument('--jobid', required=True)
             parser.add_argument('--branch')
-            parser.add_argument('--keepworker', action='store_true')
+            parser.add_argument('--resetworker', action='store_true')
             parser.add_argument('--github-user', default='asmorodskyi')
             args = parser.parse_args()
             cmd = '/usr/share/openqa/script/clone_job.pl --skip-chained-deps --parental-inheritance'
@@ -25,7 +25,7 @@ class SmartClone(TaskHelper):
             cmd += ' {}'.format(args.jobid)
             if args.params:
                 cmd += ' {}'.format(args.params.replace(',', ' '))
-            if not args.keepworker:
+            if args.resetworker:
                 cmd += ' WORKER_CLASS=qemu_x86_64 '
             if args.branch:
                 cmd += ' CASEDIR=https://github.com/{0}/os-autoinst-distri-opensuse.git#{1}'.format(

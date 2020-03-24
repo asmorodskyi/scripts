@@ -39,7 +39,7 @@ _job_clone() {
     COMPREPLY=()
     cur=${COMP_WORDS[COMP_CWORD]}
     prev="${COMP_WORDS[COMP_CWORD - 1]}"
-    opts="--frm --params --winst --jobid --branch --keepworker --github-user"
+    opts="--frm --params --winst --jobid --branch --resetworker --github-user"
     if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]]; then
         COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
         return 0
