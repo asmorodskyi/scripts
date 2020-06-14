@@ -44,11 +44,11 @@ class TaskHelper:
             sender = 'asmorodskyi@suse.com'
             receivers = ['asmorodskyi@suse.com']
             email = '''\
-        Subject: [{_name}] ERROR - {_host}
-        From: {_from}
-        To: {_to}
-        {_error}
-        '''.format(_from=sender, _to=receivers, _error=error, _name=self.name, _host=socket.gethostname())
+Subject: [{_name}] ERROR - {_host}
+From: {_from}
+To: {_to}
+{_error}
+'''.format(_from=sender, _to=receivers, _error=error, _name=self.name, _host=socket.gethostname())
             self.smtpObj.sendmail(sender, receivers, email)
         else:
             self.logger.warn(
