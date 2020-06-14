@@ -6,6 +6,16 @@ import argparse
 
 class SmartClone(TaskHelper):
 
+    def generate_params_string(self, params, reset_worker, branch, github_user):
+        self.params_str = ''
+        if params:
+            self.params_str = ' {}'.format(params.replace(',', ' '))
+        if reset_worker:
+            self.params_str += ' WORKER_CLASS=qemu_x86_64 '
+        if branch:
+            self.params_str += ' CASEDIR=https://github.com/{0}/os-autoinst-distri-opensuse.git#{1}'.format(
+                github_user, branch)
+
     def run(self):
         try:
             parser = argparse.ArgumentParser()
@@ -17,20 +27,16 @@ class SmartClone(TaskHelper):
             parser.add_argument('--resetworker', action='store_true')
             parser.add_argument('--github-user', default='asmorodskyi')
             args = parser.parse_args()
+            self.generate_params_string()
             cmd = '/usr/share/openqa/script/clone_job.pl --skip-chained-deps --parental-inheritance'
             if args.winst:
                 cmd += ' --within-instance {}'.format(args.frm)
             else:
                 cmd += ' --from {}'.format(args.frm)
-            cmd += ' {}'.format(args.jobid)
-            if args.params:
-                cmd += ' {}'.format(args.params.replace(',', ' '))
-            if args.resetworker:
-                cmd += ' WORKER_CLASS=qemu_x86_64 '
-            if args.branch:
-                cmd += ' CASEDIR=https://github.com/{0}/os-autoinst-distri-opensuse.git#{1}'.format(
-                    args.github_user, args.branch)
-            self.shell_exec(cmd, log=True)
+            ids = args.jobid.split(',')
+            for one_id in ids:
+                self.shell_exec('{} {} {}'.format(
+                    cmd, one_id, self.params_str), log=True)
         except Exception:
             self.handle_error()
 
