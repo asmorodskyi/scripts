@@ -25,6 +25,5 @@ alias la='ls -A'
 alias l='ls -CFlh'
 alias lsd="ls -alF | grep /$"
 alias diskspace="du -S | sort -n -r |more"
-alias folders="find . -maxdepth 1 -type d -print | xargs du -sk | sort -rn"
 alias docker_cleanup="docker system prune -f -a"
-alias alog="/scripts/autoinst_logparse.py"
+alias venv="source ./.venv/bin/activate"
