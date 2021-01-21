@@ -1,12 +1,10 @@
 import logzero
-from logging.handlers import RotatingFileHandler
 import smtplib
 import socket
 import os
 import traceback
 import requests
 import subprocess
-from subprocess import CalledProcessError
 import json
 from git import Repo
 
@@ -14,6 +12,7 @@ from git import Repo
 class TaskHelper:
 
     OPENQA_URL_BASE = 'https://openqa.suse.de/'
+    OPENQA_API_BASE = OPENQA_URL_BASE + 'api/v1/'
     OPENQA_EXE = '/usr/bin/openqa-client --json-output'
 
     def __init__(self, name, log_to_file=True):
@@ -54,11 +53,11 @@ To: {_to}
             self.logger.warn(
                 'SMTP object not initialized ! So not sending email')
 
-    def get_latest_build(self):
+    def get_latest_build(self, job_group_id=262):
         build = '1'
         try:
-            group_json = requests.get(
-                self.OPENQA_URL_BASE + 'group_overview/262.json', verify=False).json()
+            group_json = requests.get('{}group_overview/{}.json'.format(self.OPENQA_URL_BASE, job_group_id),
+                                      verify=False).json()
             build = group_json['build_results'][0]['build']
         except Exception as e:
             self.logger.error("Failed to get build from openQA - %s", e)
