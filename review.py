@@ -64,23 +64,24 @@ class Review(TaskHelper):
                 self.cached_jobs = pickle.load(handle)
             self.logger.info('Cache has {} jobs'.format(len(self.cached_jobs)))
 
-    def refresh_cache(self, latest_job_ids):
-        for id in latest_job_ids['ids']:
-            if id not in self.cached_jobs or self.cached_jobs[id].needs_update():
-                self.cached_jobs[id] = Job(
-                    requests.get('{}jobs/{}/details'.format(self.OPENQA_API_BASE, id), verify=False).json())
-                self.logger.debug('Updating {}'.format(self.cached_jobs[id]))
-
-    def run(self):
+    def refresh_cache(self):
         self.logger.info('Getting jobs for groupid={}'.format(self.groupid))
         job_group_jobs = requests.get('{}job_groups/{}/jobs'.format(self.OPENQA_API_BASE, self.groupid),
                                       verify=False).json()
         self.logger.info('Got {} jobs'.format(len(job_group_jobs['ids'])))
-        self.refresh_cache(job_group_jobs)
+        for id in job_group_jobs['ids']:
+            if id not in self.cached_jobs or self.cached_jobs[id].needs_update():
+                self.cached_jobs[id] = Job(
+                    requests.get('{}jobs/{}/details'.format(self.OPENQA_API_BASE, id), verify=False).json())
+                self.logger.debug('Updating {}'.format(self.cached_jobs[id]))
+        self.logger.info('Saving the cache to ' + self.cached_file)
+        with open(self.cached_file, 'wb') as handle:
+            pickle.dump(self.cached_jobs, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+    def run(self):
+        self.refresh_cache()
         jobs_needs_review = []
-
-        for job in self.cached_jobs:
+        for job in self.cached_jobs.values():
             if job.needs_review(self.latest_build):
                 jobs_needs_review.append(job.id)
 
@@ -93,18 +94,16 @@ class Review(TaskHelper):
                 bugrefs = set()
                 for id in previous_jobs:
                     bugrefs = bugrefs | self.get_bugrefs(id)
+                self.logger.info('{} bug refs found for jobid={}'.format(len(bugrefs), need_review_id))
                 for ref in bugrefs:
                     self.logger.info(
                         'Add a comment to {} with reference {}'.format(self.cached_jobs[need_review_id], ref))
-                    if not self.dry_run:
-                        self.shell_exec(
-                            'openqa-cli api --host {} -X POST jobs/{}/comments text=\'{}\''.format(self.OPENQA_URL_BASE,
-                                                                                                   need_review_id, ref),
-                            log=True)
-
-        self.logger.info('Saving the cache to ' + self.cached_file)
-        with open(self.cached_file, 'wb') as handle:
-            pickle.dump(self.cached_jobs, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                    cmd = 'openqa-cli api --host {} -X POST jobs/{}/comments text=\'{}\''.format(self.OPENQA_URL_BASE,
+                                                                                                 need_review_id, ref)
+                    if self.dry_run:
+                        self.logger.info('"{}" not executed due to dry_run=True'.format(cmd))
+                    else:
+                        self.shell_exec(cmd, log=True)
 
     def get_bugrefs(self, job_id):
         bugrefs = set()
