@@ -132,8 +132,11 @@ def main():
     parser.add_argument('--dry_run', action='store_true')
     args = parser.parse_args()
 
-    review = Review(args.groupid, args.dry_run)
-    review.run()
+    groupids = str(args.groupid).split(',')
+
+    for groupid in groupids:
+        review = Review(int(groupid), args.dry_run)
+        review.run()
 
 
 if __name__ == "__main__":
