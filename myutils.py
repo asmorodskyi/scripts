@@ -64,6 +64,16 @@ To: {_to}
         finally:
             return build
 
+    def get_previous_builds(self, job_group_id: int, deep: int = 3):
+        builds = []
+        group_json = requests.get('{}group_overview/{}.json'.format(self.OPENQA_URL_BASE, job_group_id),
+                                  verify=False).json()
+        if len(group_json['build_results']) < deep:
+            raise IndexError
+        for i in range(0,deep):
+            builds.append(group_json['build_results'][i+1]['build'])
+        return builds
+
     def shell_exec(self, cmd, log=False, is_json=False):
         try:
             if log:

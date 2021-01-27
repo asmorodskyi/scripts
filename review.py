@@ -16,13 +16,19 @@ class Job:
     def __init__(self, openqa_job):
         self.id = openqa_job['job']['id']
         self.name = openqa_job['job']['settings']['TEST']
-        self.instance_type = openqa_job['job']['settings']['PUBLIC_CLOUD_INSTANCE_TYPE']
+        if 'PUBLIC_CLOUD_INSTANCE_TYPE' in openqa_job['job']['settings']:
+            self.instance_type = openqa_job['job']['settings']['PUBLIC_CLOUD_INSTANCE_TYPE']
+        else:
+            self.instance_type = 'N/A'
         self.parents_ok = openqa_job['job']['parents_ok']
         self.result = openqa_job['job']['result']
         self.state = openqa_job['job']['state']
         self.build = openqa_job['job']['settings']['BUILD']
         self.flavor = openqa_job['job']['settings']['FLAVOR']
-        self.hdd = openqa_job['job']['settings']['HDD_1']
+        if 'HDD_1' in openqa_job['job']['settings']:
+            self.hdd = openqa_job['job']['settings']['HDD_1']
+        else:
+            self.hdd = 'N/A'
         self.failed_modules = []
         for module in openqa_job['job']['testresults']:
             if module['result'] == 'failed':
@@ -56,6 +62,7 @@ class Review(TaskHelper):
         self.dry_run = dry_run
         self.groupid = groupid
         self.latest_build = self.get_latest_build(self.groupid)
+        self.previous_builds = self.get_previous_builds(groupid)
         self.logger.info(self.latest_build + ' is latest build')
         self.cached_file = 'jobs{}.pickle'.format(self.groupid)
         if Path(self.cached_file).exists():
@@ -115,8 +122,7 @@ class Review(TaskHelper):
 
     def get_previous_jobs(self, job_id):
         previous_jobs = []
-        for i in [1, 2, 3]:
-            previous_build = '00{}'.format(int(self.latest_build) - i)
+        for previous_build in self.previous_builds:
             for id in self.cached_jobs:
                 if id == job_id:
                     continue
