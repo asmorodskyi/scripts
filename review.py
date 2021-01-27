@@ -64,7 +64,7 @@ class Review(TaskHelper):
         self.latest_build = self.get_latest_build(self.groupid)
         self.previous_builds = self.get_previous_builds(groupid)
         self.logger.info(self.latest_build + ' is latest build')
-        self.cached_file = 'jobs{}.pickle'.format(self.groupid)
+        self.cached_file = '/scripts/jobs{}.pickle'.format(self.groupid)
         if Path(self.cached_file).exists():
             self.logger.info('Cached jobs found loading from ' + self.cached_file)
             with open(self.cached_file, 'rb') as handle:
