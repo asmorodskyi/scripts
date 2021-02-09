@@ -7,6 +7,7 @@ import argparse
 import pickle
 from pathlib import Path
 import urllib3
+import json
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -35,7 +36,7 @@ class Job:
                 self.failed_modules.append(module['name'])
 
     def needs_review(self, latest_build: int) -> bool:
-        return bool(self.build == latest_build and self.result != 'passed' and not self.needs_update())
+        return bool(self.build == latest_build and self.result not in ['passed', 'skipped'] and not self.needs_update())
 
     def needs_update(self) -> bool:
         return bool(self.state not in ['done', 'cancelled'])
@@ -55,6 +56,7 @@ class Job:
 
 
 class Review(TaskHelper):
+    known_json = '/scripts/known.json'
 
     def __init__(self, groupid: int, dry_run: bool = False):
         super(Review, self).__init__('review', log_to_file=False)
@@ -86,6 +88,7 @@ class Review(TaskHelper):
             pickle.dump(self.cached_jobs, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     def run(self):
+        # self.apply_known()
         self.refresh_cache()
         jobs_needs_review = []
         for job in self.cached_jobs.values():
@@ -94,14 +97,17 @@ class Review(TaskHelper):
 
         for need_review_id in jobs_needs_review:
             need_review_bugrefs = self.get_bugrefs(need_review_id)
-            if len(need_review_bugrefs) > 0:
-                self.logger.info('{} already have bug refs'.format(need_review_id))
-            else:
+            if len(need_review_bugrefs) == 0:
                 previous_jobs = self.get_previous_jobs(need_review_id)
                 bugrefs = set()
                 for id in previous_jobs:
                     bugrefs = bugrefs | self.get_bugrefs(id)
-                self.logger.info('{} bug refs found for jobid={}'.format(len(bugrefs), need_review_id))
+                if len(bugrefs) == 0:
+                    self.logger.info('{}t{} [{}, {}, {}]'.format(self.OPENQA_URL_BASE, need_review_id,
+                                                                                self.cached_jobs[need_review_id].name,
+                                                                                self.cached_jobs[need_review_id].flavor,
+                                                                                self.cached_jobs[
+                                                                                    need_review_id].failed_modules))
                 for ref in bugrefs:
                     self.logger.info(
                         'Add a comment to {} with reference {}'.format(self.cached_jobs[need_review_id], ref))
@@ -130,6 +136,13 @@ class Review(TaskHelper):
                     id].result == 'failed':
                     previous_jobs.append(id)
         return previous_jobs
+
+    def apply_known(self):
+        with open(Review.known_json) as f:
+            known = json.load(f)
+            for item in known:
+                self.logger.info(
+                    'test={},failed_modules={},label={}'.format(item['test'], item['failed_modules'], item['label']))
 
 
 def main():
