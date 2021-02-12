@@ -145,7 +145,8 @@ class Review(TaskHelper):
             for jobid in needs_review_ids:
                 job = self.cached_jobs[jobid]
                 for item in known:
-                    if item['test'] == job.name and item['failed_modules'] == job.failed_modules:
+                    if item['test'] == job.name and item['failed_modules'] == job.failed_modules and len(
+                            self.get_bugrefs(jobid)) == 0:
                         self.add_comment(jobid, item['label'])
 
 
