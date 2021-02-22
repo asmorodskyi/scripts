@@ -1,3 +1,5 @@
+from email.mime.text import MIMEText
+
 import logzero
 import smtplib
 import socket
@@ -10,7 +12,6 @@ from git import Repo
 
 
 class TaskHelper:
-
     OPENQA_URL_BASE = 'https://openqa.suse.de/'
     OPENQA_API_BASE = OPENQA_URL_BASE + 'api/v1/'
     OPENQA_EXE = '/usr/bin/openqa-client --json-output'
@@ -20,7 +21,8 @@ class TaskHelper:
         if log_to_file:
             self.logger = logzero.setup_logger(
                 name=name, logfile='/var/log/{0}/{0}.log'.format(self.name), formatter=logzero.LogFormatter(
-                    fmt='%(color)s[%(asctime)s %(module)s:%(lineno)d]%(end_color)s %(message)s', datefmt='%d-%m %H:%M:%S'))
+                    fmt='%(color)s[%(asctime)s %(module)s:%(lineno)d]%(end_color)s %(message)s',
+                    datefmt='%d-%m %H:%M:%S'))
         else:
             self.logger = logzero.setup_logger(
                 name=name, formatter=logzero.LogFormatter(
@@ -35,23 +37,22 @@ class TaskHelper:
         except:
             pass
 
+    def send_mail(self, subject, message, to_list):
+        if hasattr(self, 'smtpObj'):
+            mimetext = MIMEText(message)
+            mimetext['Subject'] = subject
+            mimetext['From'] = 'asmorodskyi@suse.com'
+            mimetext['To'] = to_list
+            self.smtpObj.sendmail('asmorodskyi@suse.com', to_list.split(','), mimetext.as_string())
+        else:
+            self.logger.warn(
+                'SMTP object not initialized ! So not sending email')
+
     def handle_error(self, error=''):
         if not error:
             error = traceback.format_exc()
         self.logger.error(error)
-        if hasattr(self, 'smtpObj'):
-            sender = 'asmorodskyi@suse.com'
-            receivers = ['asmorodskyi@suse.com']
-            email = '''\
-Subject: [{_name}] ERROR - {_host}
-From: {_from}
-To: {_to}
-{_error}
-'''.format(_from=sender, _to=receivers, _error=error, _name=self.name, _host=socket.gethostname())
-            self.smtpObj.sendmail(sender, receivers, email)
-        else:
-            self.logger.warn(
-                'SMTP object not initialized ! So not sending email')
+        self.send_mail('[{}] ERROR - {}'.format(self.name, socket.gethostname()), error, 'asmorodskyi@suse.com')
 
     def get_latest_build(self, job_group_id=262):
         build = '1'
@@ -70,9 +71,15 @@ To: {_to}
                                   verify=False).json()
         if len(group_json['build_results']) < deep:
             raise IndexError
-        for i in range(0,deep):
-            builds.append(group_json['build_results'][i+1]['build'])
+        for i in range(0, deep):
+            builds.append(group_json['build_results'][i + 1]['build'])
         return builds
+
+    def groupID_to_name(self, id):
+        if id == 170 or id == 262:
+            return "Network"
+        else:
+            return str(id)
 
     def shell_exec(self, cmd, log=False, is_json=False):
         try:
