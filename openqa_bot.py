@@ -38,8 +38,6 @@ class openQABot(TaskHelper):
 
     def __init__(self, for_o3):
         super(openQABot, self).__init__('openqabot', log_to_file=True)
-        if not hasattr(self, 'smtpObj'):
-            raise Exception('No ability to sent emails')
         self.for_o3 = for_o3
         self.rules_compiled = []
         if self.for_o3:

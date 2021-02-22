@@ -27,26 +27,18 @@ class TaskHelper:
             self.logger = logzero.setup_logger(
                 name=name, formatter=logzero.LogFormatter(
                     fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            smtp_host = 'relay.suse.de'
-            smtp_port = 25
-            s.connect((smtp_host, int(smtp_port)))
-            s.shutdown(2)
-            self.smtpObj = smtplib.SMTP(smtp_host, smtp_port)
-        except:
-            pass
 
     def send_mail(self, subject, message, to_list):
-        if hasattr(self, 'smtpObj'):
+        try:
             mimetext = MIMEText(message)
             mimetext['Subject'] = subject
             mimetext['From'] = 'asmorodskyi@suse.com'
             mimetext['To'] = to_list
-            self.smtpObj.sendmail('asmorodskyi@suse.com', to_list.split(','), mimetext.as_string())
-        else:
-            self.logger.warn(
-                'SMTP object not initialized ! So not sending email')
+            server = smtplib.SMTP('relay.suse.de', 25)
+            server.ehlo()
+            server.sendmail('asmorodskyi@suse.com', to_list.split(','), mimetext.as_string())
+        except Exception:
+            self.logger.error("Fail to send email - {}".format(traceback.format_exc()))
 
     def handle_error(self, error=''):
         if not error:
