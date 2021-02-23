@@ -2,21 +2,20 @@
 
 import argparse
 import sys
-import json
 from myutils import TaskHelper
 
 
 class IsosPost(TaskHelper):
-
-    available_testsuites = {'network': 'wicked_advanced_ref,wicked_advanced_sut,wicked_basic_sut,wicked_basic_ref,wicked_startandstop_ref,wicked_startandstop_sut,wicked_ipv6_ref,wicked_ipv6_sut',
-                            'advanced': 'wicked_advanced_ref,wicked_advanced_sut',
-                            'basic': 'wicked_basic_ref,wicked_basic_sut',
-                            'startandstop': 'wicked_startandstop_ref,wicked_startandstop_sut',
-                            'aggregate': 'wicked_aggregate_ref,wicked_aggregate_sut',
-                            'ipv6': 'wicked_ipv6_ref,wicked_ipv6_sut'}
+    available_testsuites = {
+        'network': 'wicked_advanced_ref,wicked_advanced_sut,wicked_basic_sut,wicked_basic_ref,wicked_startandstop_ref,wicked_startandstop_sut,wicked_ipv6_ref,wicked_ipv6_sut',
+        'advanced': 'wicked_advanced_ref,wicked_advanced_sut',
+        'basic': 'wicked_basic_ref,wicked_basic_sut',
+        'startandstop': 'wicked_startandstop_ref,wicked_startandstop_sut',
+        'aggregate': 'wicked_aggregate_ref,wicked_aggregate_sut',
+        'ipv6': 'wicked_ipv6_ref,wicked_ipv6_sut'}
 
     def get_job_name(self, host, job_id):
-        cmd = self.OPENQA_EXE + ' --host {} jobs/{}'.format(host, job_id)
+        cmd = '{} --host {} jobs/{}'.format(self.OPENQA_EXE, host, job_id)
         return self.shell_exec(cmd, is_json=True)['job']['name']
 
     def set_job_priority(self, host, job_id, priority):
@@ -77,7 +76,7 @@ class IsosPost(TaskHelper):
             parser = argparse.ArgumentParser()
             parser.add_argument('--host', default=self.OPENQA_URL_BASE)
             parser.add_argument('--distri', default='SLE')
-            parser.add_argument('--version', default='15-SP2')
+            parser.add_argument('--version', default='15-SP3')
             parser.add_argument('--flavor', default='Online')
             parser.add_argument('--arch', default='x86_64')
             parser.add_argument('--iso')
@@ -117,7 +116,7 @@ class IsosPost(TaskHelper):
                     if (args.priority is not None):
                         self.set_job_priority(args.host, job_id, args.priority)
         except Exception:
-            self.logger.error(traceback.format_exc())
+            self.handle_error()
 
 
 def main():
