@@ -90,7 +90,7 @@ class openQABot(TaskHelper):
     def run(self):
         while True:
             try:
-                self.logger.info("Connecting to AMQP server")
+                self.logger.info("Connecting to {}".format(self.amqp_server))
                 connection = pika.BlockingConnection(pika.URLParameters(self.amqp_server))
                 channel = connection.channel()
                 channel.exchange_declare(exchange="pubsub", exchange_type='topic', passive=True)
