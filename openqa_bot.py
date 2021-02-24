@@ -56,10 +56,10 @@ class openQABot(TaskHelper):
                  lambda t, m: m.get('result', "") == "failed" and m.get('group_id', "") in my_osd_groups)]
             self.amqp_server = "amqps://suse:suse@rabbit.suse.de"
             pid_file = '/tmp/suse_msg_osd.lock'
-        fp = open(pid_file, 'w')
+        self.fp = open(pid_file, 'w')
         try:
             self.logger.info("Check if another instance is running ....")
-            fcntl.lockf(fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.lockf(self.fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError:
             sys.exit(0)
         for rule in rules_defined:
