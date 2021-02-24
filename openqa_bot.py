@@ -75,7 +75,7 @@ class openQABot(openQAHelper):
         hdd = 'None'
         if 'HDD_1' in msg:
             hdd = msg['HDD_1']
-        message = '''\  
+        message = '''  
         Build={build}
         Flavor={flavor}
         Disk={disk}
