@@ -9,7 +9,7 @@ import pika
 import json
 import re
 
-from myutils import TaskHelper
+from myutils import openQAHelper
 
 global bot
 
@@ -34,11 +34,10 @@ def msg_cb(ch, method, properties, body):
         bot.logger.warn("Invalid msg: {} -> {}".format(topic, body))
 
 
-class openQABot(TaskHelper):
+class openQABot(openQAHelper):
 
     def __init__(self, for_o3):
-        super(openQABot, self).__init__('openqabot', log_to_file=True)
-        self.for_o3 = for_o3
+        super(openQABot, self).__init__('openqabot', for_o3, log_to_file=True)
         self.rules_compiled = []
         if self.for_o3:
             self.binding_key = "opensuse.openqa.job.done"
@@ -67,14 +66,12 @@ class openQABot(TaskHelper):
                 (re.compile(rule[0].replace('.', '\.').replace('*', '[^.]*').replace('#', '.*')), rule[1]))
 
     def send_email(self, topic, msg):
-        if topic == 'suse.openqa.job.done':
-            subj_text = 'SUSE.DE - '
-            job_url = 'https://openqa.suse.de/t'
-        else:
+        if self.for_o3:
             subj_text = 'openSUSE.ORG - '
-            job_url = 'https://openqa.opensuse.org/t'
+        else:
+            subj_text = 'SUSE.DE - '
         subj_text += "{}-{}-{}".format(msg['TEST'], msg['ARCH'], self.groupID_to_name(msg['group_id']))
-        job_url += str(msg['id'])
+        job_url = '{}t{}'.format(self.OPENQA_URL_BASE, msg['id'])
         hdd = 'None'
         if 'HDD_1' in msg:
             hdd = msg['HDD_1']

@@ -2,7 +2,7 @@
 
 import requests
 
-from myutils import TaskHelper
+from myutils import openQAHelper
 import argparse
 import pickle
 from pathlib import Path
@@ -55,7 +55,7 @@ class Job:
                               self.failed_modules)
 
 
-class Review(TaskHelper):
+class Review(openQAHelper):
     known_json = '/scripts/known.json'
 
     def __init__(self, groupid: int, dry_run: bool = False, apply_known: bool = False):

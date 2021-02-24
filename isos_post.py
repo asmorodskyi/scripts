@@ -13,6 +13,7 @@ class IsosPost(TaskHelper):
         'startandstop': 'wicked_startandstop_ref,wicked_startandstop_sut',
         'aggregate': 'wicked_aggregate_ref,wicked_aggregate_sut',
         'ipv6': 'wicked_ipv6_ref,wicked_ipv6_sut'}
+    OPENQA_EXE = '/usr/bin/openqa-client --json-output'
 
     def get_job_name(self, host, job_id):
         cmd = '{} --host {} jobs/{}'.format(self.OPENQA_EXE, host, job_id)
@@ -74,7 +75,7 @@ class IsosPost(TaskHelper):
     def run(self):
         try:
             parser = argparse.ArgumentParser()
-            parser.add_argument('--host', default=self.OPENQA_URL_BASE)
+            parser.add_argument('--host', default='https://openqa.suse.de/')
             parser.add_argument('--distri', default='SLE')
             parser.add_argument('--version', default='15-SP3')
             parser.add_argument('--flavor', default='Online')

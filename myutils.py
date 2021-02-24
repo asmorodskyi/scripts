@@ -12,9 +12,6 @@ from git import Repo
 
 
 class TaskHelper:
-    OPENQA_URL_BASE = 'https://openqa.suse.de/'
-    OPENQA_API_BASE = OPENQA_URL_BASE + 'api/v1/'
-    OPENQA_EXE = '/usr/bin/openqa-client --json-output'
 
     def __init__(self, name, log_to_file=True):
         self.name = name
@@ -49,7 +46,7 @@ class TaskHelper:
     def get_latest_build(self, job_group_id=262):
         build = '1'
         try:
-            group_json = requests.get('{}group_overview/{}.json'.format(self.OPENQA_URL_BASE, job_group_id),
+            group_json = requests.get('https://openqa.suse.de/group_overview/{}.json'.format(job_group_id),
                                       verify=False).json()
             build = group_json['build_results'][0]['build']
         except Exception as e:
@@ -57,21 +54,6 @@ class TaskHelper:
         finally:
             return build
 
-    def get_previous_builds(self, job_group_id: int, deep: int = 3):
-        builds = []
-        group_json = requests.get('{}group_overview/{}.json'.format(self.OPENQA_URL_BASE, job_group_id),
-                                  verify=False).json()
-        if len(group_json['build_results']) < deep:
-            raise IndexError
-        for i in range(0, deep):
-            builds.append(group_json['build_results'][i + 1]['build'])
-        return builds
-
-    def groupID_to_name(self, id):
-        if id == 170 or id == 262:
-            return "Network"
-        else:
-            return str(id)
 
     def shell_exec(self, cmd, log=False, is_json=False):
         try:
@@ -102,3 +84,37 @@ class GitHelper(TaskHelper):
                 self.remote = self.repo.remotes.asmorodskyi
         except Exception:
             self.remote = self.repo.remotes.origin
+
+
+class openQAHelper(TaskHelper):
+
+    def __init__(self, name, for_o3, log_to_file=False):
+        super(openQAHelper, self).__init__(name, log_to_file=log_to_file)
+        self.for_o3 = for_o3
+        if self.for_o3:
+            self.OPENQA_URL_BASE = 'https://openqa.opensuse.org/'
+        else:
+            self.OPENQA_URL_BASE = 'https://openqa.suse.de/'
+        self.OPENQA_API_BASE = self.OPENQA_URL_BASE + 'api/v1/'
+
+    def get_previous_builds(self, job_group_id: int, deep: int = 3):
+        builds = []
+        group_json = requests.get('{}group_overview/{}.json'.format(self.OPENQA_URL_BASE, job_group_id),
+                                  verify=False).json()
+        if len(group_json['build_results']) < deep:
+            raise IndexError
+        for i in range(0, deep):
+            builds.append(group_json['build_results'][i + 1]['build'])
+        return builds
+
+    def groupID_to_name(self, id):
+        if id == 170 or id == 262:
+            return "Network"
+        elif id == 219:
+            return  "Azure"
+        elif id == 274:
+            return "EC2"
+        elif id == 275:
+            return "GCE"
+        else:
+            return str(id)

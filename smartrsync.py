@@ -15,8 +15,7 @@ class SmartRSync(TaskHelper):
             if os.path.isfile(full_path):
                 self.logger.info('File found')
             else:
-                target_url = '{0}assets/{1}/{2}'.format(self.OPENQA_URL_BASE,
-                                                        filetype, filename)
+                target_url = 'https://openqa.suse.de/assets/{0}/{1}'.format(filetype, filename)
                 self.logger.info(
                     'File not found. Will try to download it from %s', target_url)
                 try:
