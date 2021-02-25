@@ -59,7 +59,7 @@ class Review(openQAHelper):
     known_json = '/scripts/known.json'
 
     def __init__(self, groupid: int, dry_run: bool = False, apply_known: bool = False):
-        super(Review, self).__init__('review', log_to_file=False)
+        super(Review, self).__init__('review', False, log_to_file=False)
         self.cached_jobs = {}
         self.dry_run = dry_run
         self.groupid = groupid
