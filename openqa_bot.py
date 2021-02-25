@@ -9,16 +9,9 @@ import pika
 import json
 import re
 
-from myutils import openQAHelper
+from myutils import openQAHelper, is_matched
 
 global bot
-
-
-def is_matched(rules, topic, msg):
-    for rule in rules:
-        rkey, filter_matches = rule
-        if rkey.match(topic) and filter_matches(topic, msg):
-            return True
 
 
 def msg_cb(ch, method, properties, body):

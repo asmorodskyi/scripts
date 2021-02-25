@@ -54,7 +54,6 @@ class TaskHelper:
         finally:
             return build
 
-
     def shell_exec(self, cmd, log=False, is_json=False):
         try:
             if log:
@@ -111,10 +110,19 @@ class openQAHelper(TaskHelper):
         if id == 170 or id == 262:
             return "Network"
         elif id == 219:
-            return  "Azure"
+            return "Azure"
         elif id == 274:
             return "EC2"
         elif id == 275:
             return "GCE"
+        elif id == 276:
+            return "PC Tools Image"
         else:
             return str(id)
+
+
+def is_matched(rules, topic, msg):
+    for rule in rules:
+        rkey, filter_matches = rule
+        if rkey.match(topic) and filter_matches(topic, msg):
+            return True
