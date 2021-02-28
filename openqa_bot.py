@@ -30,7 +30,7 @@ def msg_cb(ch, method, properties, body):
 class openQABot(openQAHelper):
 
     def __init__(self, for_o3):
-        super(openQABot, self).__init__('openqabot', for_o3, log_to_file=True)
+        super(openQABot, self).__init__('openqabot', for_o3, log_to_file=True, load_cache=False)
         self.rules_compiled = []
         if self.for_o3:
             self.binding_key = "opensuse.openqa.job.done"
@@ -41,11 +41,10 @@ class openQABot(openQAHelper):
             self.amqp_server = "amqps://opensuse:opensuse@rabbit.opensuse.org"
             pid_file = '/tmp/suse_msg_o3.lock'
         else:
-            my_osd_groups = [262, 219, 274, 275, 276]
             self.binding_key = "suse.openqa.job.done"
             rules_defined = [
                 (self.binding_key,
-                 lambda t, m: m.get('result', "") == "failed" and m.get('group_id', "") in my_osd_groups)]
+                 lambda t, m: m.get('result', "") == "failed" and m.get('group_id', "") in self.my_osd_groups)]
             self.amqp_server = "amqps://suse:suse@rabbit.suse.de"
             pid_file = '/tmp/suse_msg_osd.lock'
         self.fp = open(pid_file, 'w')
@@ -90,7 +89,7 @@ class openQABot(openQAHelper):
                 channel.basic_consume(queue=queue_name, on_message_callback=msg_cb, auto_ack=True)
                 self.logger.info("Connected")
                 channel.start_consuming()
-            except Exception as e:
+            except Exception:
                 self.handle_error()
                 if 'channel' in locals():
                     channel.stop_consuming()

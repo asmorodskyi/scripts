@@ -27,11 +27,10 @@ def msg_cb(ch, method, properties, body):
 class openQANotify(openQAHelper):
 
     def __init__(self):
-        super(openQANotify, self).__init__("openqanotify", False, log_to_file=True)
+        super(openQANotify, self).__init__("openqanotify", False, log_to_file=True, load_cache=True)
         self.rules_compiled = []
         self.binding_key = "suse.openqa.job.done"
-        my_osd_groups = [262, 219, 274, 275, 276]
-        rules_defined = [ (self.binding_key, lambda t, m: m.get('group_id', "") in my_osd_groups)]
+        rules_defined = [(self.binding_key, lambda t, m: m.get('group_id', "") in self.my_osd_groups)]
         self.amqp_server = "amqps://suse:suse@rabbit.suse.de"
         pid_file = '/tmp/suse_notify.lock'
         self.fp = open(pid_file, 'w')
@@ -57,7 +56,7 @@ class openQANotify(openQAHelper):
                 channel.basic_consume(queue=queue_name, on_message_callback=msg_cb, auto_ack=True)
                 self.logger.info("Connected")
                 channel.start_consuming()
-            except Exception as e:
+            except Exception:
                 self.handle_error()
                 if 'channel' in locals():
                     channel.stop_consuming()
