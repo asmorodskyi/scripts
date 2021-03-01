@@ -112,10 +112,9 @@ class openQAHelper(TaskHelper):
         builds = []
         group_json = requests.get('{}group_overview/{}.json'.format(self.OPENQA_URL_BASE, job_group_id),
                                   verify=False).json()
-        if len(group_json['build_results']) < deep:
-            raise IndexError
-        for i in range(0, deep):
-            builds.append(group_json['build_results'][i + 1]['build'])
+        if len(group_json['build_results']) > deep:
+            for i in range(0, deep):
+                builds.append(group_json['build_results'][i + 1]['build'])
         return builds
 
     def groupID_to_name(self, id):
@@ -134,10 +133,10 @@ class openQAHelper(TaskHelper):
 
     def refresh_cache(self):
         for groupid in self.my_osd_groups:
-            self.logger.info('Getting jobs for groupid={}'.format(groupid))
             job_group_jobs = requests.get('{}job_groups/{}/jobs'.format(self.OPENQA_API_BASE, groupid),
                                           verify=False).json()
-            self.logger.info('Got {} jobs for groupID={}'.format(len(job_group_jobs['ids']), groupid))
+
+            self.logger.info('Got {} jobs for {}'.format(len(job_group_jobs['ids']), self.groupID_to_name(groupid)))
             for id in job_group_jobs['ids']:
                 job_orm = self.job_query.get(id)
                 if job_orm:
