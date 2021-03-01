@@ -14,8 +14,9 @@ class JobORM(Base):
     build = Column(String)
     flavor = Column(String)
     hdd = Column(String)
+    groupid = Column(String)
     needs_update = Column(Boolean)
-    failed_modules = Column(PickleType)
+    failed_modules = Column(String)
 
     def update_from_json(self, openqa_json):
         self.id = openqa_json['job']['id']
@@ -32,11 +33,15 @@ class JobORM(Base):
             self.hdd = openqa_json['job']['settings']['HDD_1']
         else:
             self.hdd = 'N/A'
-        self.failed_modules = []
+        self.failed_modules = ""
+        self.groupid = openqa_json['job']['group_id']
         self.needs_update = bool(self.state not in ['done', 'cancelled'])
         for module in openqa_json['job']['testresults']:
             if module['result'] == 'failed':
-                self.failed_modules.append(module['name'])
+                if self.failed_modules:
+                    self.failed_modules = "{},{}".format(self.failed_modules, module['name'])
+                else:
+                    self.failed_modules = module['name']
 
     def __str__(self):
         pattern = 'Job(id: {}, name: {}, instance_type: {}, result: {}, state: {}, build: {}, flavor: {},' \
