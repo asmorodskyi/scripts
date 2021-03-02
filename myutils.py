@@ -93,7 +93,7 @@ class openQAHelper(TaskHelper):
     def __init__(self, name, for_o3, log_to_file=False, load_cache=False):
         super(openQAHelper, self).__init__(name, log_to_file=log_to_file)
         self.for_o3 = for_o3
-        self.my_osd_groups = [262, 219, 274, 275, 276]
+        self.my_osd_groups = [262, 219, 274, 275]
         if self.for_o3:
             self.OPENQA_URL_BASE = 'https://openqa.opensuse.org/'
         else:
