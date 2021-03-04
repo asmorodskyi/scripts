@@ -90,17 +90,20 @@ class GitHelper(TaskHelper):
 
 class openQAHelper(TaskHelper):
 
-    def __init__(self, name, for_o3, log_to_file=False, load_cache=False):
+    def __init__(self, name, for_o3, log_to_file=False, load_cache=False, groupid: str = None):
         super(openQAHelper, self).__init__(name, log_to_file=log_to_file)
         self.for_o3 = for_o3
-        self.my_osd_groups = [262, 219, 274, 275]
+        if groupid:
+            self.my_osd_groups = [int(num_str) for num_str in str(groupid).split(',')]
+        else:
+            self.my_osd_groups = [262, 219, 274, 275]
         if self.for_o3:
             self.OPENQA_URL_BASE = 'https://openqa.opensuse.org/'
         else:
             self.OPENQA_URL_BASE = 'https://openqa.suse.de/'
         self.OPENQA_API_BASE = self.OPENQA_URL_BASE + 'api/v1/'
         if load_cache:
-            engine = create_engine('sqlite:///openqa_cache.db')
+            engine = create_engine('sqlite:////scripts/openqa_cache.db')
             Base.metadata.create_all(engine, Base.metadata.tables.values(), checkfirst=True)
             Session = sessionmaker(bind=engine)
             self.session = Session()

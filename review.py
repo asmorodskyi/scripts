@@ -14,8 +14,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 class Review(openQAHelper):
     known_json = '/scripts/known.json'
 
-    def __init__(self, dry_run: bool = False, apply_known: bool = False):
-        super(Review, self).__init__('review', False, log_to_file=False, load_cache=True)
+    def __init__(self, dry_run: bool = False, apply_known: bool = False, groupid: str = None):
+        super(Review, self).__init__('review', False, log_to_file=False, load_cache=True, groupid=groupid)
         self.dry_run = dry_run
         self.apply_known = apply_known
 
@@ -25,28 +25,30 @@ class Review(openQAHelper):
             previous_builds = self.get_previous_builds(groupid)
             self.logger.info('{} is latest build for {}'.format(latest_build, self.groupID_to_name(groupid)))
             for job in self.job_query.filter(JobORM.build == latest_build).filter(JobORM.needs_update == False).\
-                    filter(JobORM.result.notin_(['passed', 'skipped', 'parallel_failed'])).all():
+                    filter(JobORM.result.notin_(['passed', 'skipped', 'parallel_failed'])).\
+                    filter(JobORM.groupid == groupid).all():
                 if self.apply_known:
                     self.apply_known_refs(job)
                 need_review_bugrefs = self.get_bugrefs(job.id)
                 if len(need_review_bugrefs) == 0:
                     bugrefs = set()
-                    for previous_job in self.job_query.filter(JobORM.build in previous_builds).\
+                    for previous_job in self.job_query.filter(JobORM.build.in_(previous_builds)).\
                             filter(JobORM.name == job.name).filter(JobORM.instance_type == job.instance_type).\
                             filter(JobORM.flavor == job.flavor).filter(JobORM.failed_modules == job.failed_modules).\
-                            filter(JobORM.result == 'failed').all():
-                        #self.logger.info("{} is previous for {}".format(previous_job, job))
+                            filter(JobORM.result == 'failed').filter(JobORM.groupid == groupid).all():
                         bugrefs = bugrefs | self.get_bugrefs(previous_job.id)
                     if len(bugrefs) == 0:
                         self.logger.info(
                             '{} on {} {}t{} [{}]'.format(job.name, job.flavor, self.OPENQA_URL_BASE, job.id,
                                                          job.failed_modules))
                     for ref in bugrefs:
-                        self.add_comment(job.id, ref)
+                        self.add_comment(job, ref)
 
     def get_bugrefs(self, job_id):
         bugrefs = set()
         comments = requests.get('{}jobs/{}/comments'.format(self.OPENQA_API_BASE, job_id), verify=False).json()
+        if 'error' in comments:
+            raise RuntimeError(comments)
         for comment in comments:
             for bug in comment['bugrefs']:
                 bugrefs.add(bug)
@@ -76,9 +78,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dry_run', action='store_true')
     parser.add_argument('--apply_known', action='store_true')
+    parser.add_argument('--groupid')
     args = parser.parse_args()
 
-    review = Review(args.dry_run, args.apply_known)
+    review = Review(args.dry_run, args.apply_known, args.groupid)
     review.run()
 
 
