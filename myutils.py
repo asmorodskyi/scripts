@@ -109,7 +109,8 @@ class openQAHelper(TaskHelper):
             self.session = Session()
             self.job_query = self.session.query(JobORM)
             self.logger.info("{} objects was in cache".format(self.job_query.count()))
-            self.refresh_cache()
+            for gr_id in self.my_osd_groups:
+                self.refresh_cache(gr_id)
 
     def get_previous_builds(self, job_group_id: int, deep: int = 3):
         builds = []
@@ -134,27 +135,25 @@ class openQAHelper(TaskHelper):
         else:
             return str(id)
 
-    def refresh_cache(self):
-        for groupid in self.my_osd_groups:
-            job_group_jobs = requests.get('{}job_groups/{}/jobs'.format(self.OPENQA_API_BASE, groupid),
-                                          verify=False).json()
-
-            self.logger.info('Got {} jobs for {}'.format(len(job_group_jobs['ids']), self.groupID_to_name(groupid)))
-            for id in job_group_jobs['ids']:
-                job_orm = self.job_query.get(id)
-                if job_orm:
-                    if job_orm.needs_update:
-                        job_orm.update_from_json(requests.get(
-                            '{}jobs/{}/details'.format(self.OPENQA_API_BASE, id), verify=False).json())
-                        self.logger.debug('Updating {}'.format(job_orm))
-                        self.session.commit()
-                else:
-                    job_orm = JobORM()
+    def refresh_cache(self, groupid):
+        job_group_jobs = requests.get(
+            '{}job_groups/{}/jobs'.format(self.OPENQA_API_BASE, groupid), verify=False).json()
+        self.logger.info('Got {} jobs for {}'.format(len(job_group_jobs['ids']), self.groupID_to_name(groupid)))
+        for id in job_group_jobs['ids']:
+            job_orm = self.job_query.get(id)
+            if job_orm:
+                if job_orm.needs_update:
                     job_orm.update_from_json(requests.get(
                         '{}jobs/{}/details'.format(self.OPENQA_API_BASE, id), verify=False).json())
-                    self.logger.debug('Adding {}'.format(job_orm))
-                    self.session.add(job_orm)
+                    self.logger.debug('Updating {}'.format(job_orm))
                     self.session.commit()
+            else:
+                job_orm = JobORM()
+                job_orm.update_from_json(requests.get(
+                    '{}jobs/{}/details'.format(self.OPENQA_API_BASE, id), verify=False).json())
+                self.logger.debug('Adding {}'.format(job_orm))
+                self.session.add(job_orm)
+                self.session.commit()
 
 
 def is_matched(rules, topic, msg):

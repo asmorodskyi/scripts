@@ -4,12 +4,17 @@ import json
 import re
 import sys
 import time
+import urllib3
+import jinja2
 
 import pika
 
 from myutils import openQAHelper, is_matched
+from models import JobORM
 
 global notifier
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def msg_cb(ch, method, properties, body):
@@ -20,6 +25,7 @@ def msg_cb(ch, method, properties, body):
         msg = json.loads(body)
         if is_matched(notifier.rules_compiled, topic, msg):
             notifier.logger.info("{}: {}".format(topic, msg))
+            # notifier.handle_job_done(msg)
     except ValueError:
         notifier.logger.warn("Invalid msg: {} -> {}".format(topic, body))
 
@@ -62,11 +68,28 @@ class openQANotify(openQAHelper):
                     channel.stop_consuming()
                 time.sleep(5)
 
+    def generate_report(self, groupid):
+        self.refresh_cache(groupid)
+        latest_build = self.get_latest_build(groupid)
+        jobs = self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == groupid).all()
+        jinjaEnv = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath="/scripts/"))
+        notify_template = jinjaEnv.get_template("notify_template.html")
+        report = notify_template.render(
+            items=jobs, build=jobs[0].build, flavor=jobs[0].flavor, group=jobs[0].groupid)
+        with open('/tmp/11111.html', 'w') as f:
+            f.writelines(report)
+            f.close()
+
+    # def handle_job_done(self, msg):
+     #   self.refresh_cache(msg['group_id'])
+     #   job = self.get
+
 
 def main():
     global notifier
     notifier = openQANotify()
-    notifier.run()
+    notifier.generate_report(275)
+    # notifier.run()
 
 
 if __name__ == "__main__":
