@@ -1,4 +1,5 @@
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 import logzero
 import smtplib
@@ -28,9 +29,16 @@ class TaskHelper:
                 name=name, formatter=logzero.LogFormatter(
                     fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
 
-    def send_mail(self, subject, message, to_list):
+    def send_mail(self, subject, message, to_list, html_message: str = None):
         try:
-            mimetext = MIMEText(message)
+            if html_message:
+                mimetext = MIMEMultipart('alternative')
+                part1 = MIMEText(message, 'plain')
+                part2 = MIMEText(html_message, 'html')
+                mimetext.attach(part1)
+                mimetext.attach(part2)
+            else:
+                mimetext = MIMEText(message)
             mimetext['Subject'] = subject
             mimetext['From'] = 'asmorodskyi@suse.com'
             mimetext['To'] = to_list
@@ -154,6 +162,16 @@ class openQAHelper(TaskHelper):
                 self.logger.debug('Adding {}'.format(job_orm))
                 self.session.add(job_orm)
                 self.session.commit()
+
+    def get_bugrefs(self, job_id):
+        bugrefs = set()
+        comments = requests.get('{}jobs/{}/comments'.format(self.OPENQA_API_BASE, job_id), verify=False).json()
+        if 'error' in comments:
+            raise RuntimeError(comments)
+        for comment in comments:
+            for bug in comment['bugrefs']:
+                bugrefs.add(bug)
+        return bugrefs
 
 
 def is_matched(rules, topic, msg):

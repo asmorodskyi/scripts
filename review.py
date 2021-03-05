@@ -44,16 +44,6 @@ class Review(openQAHelper):
                     for ref in bugrefs:
                         self.add_comment(job, ref)
 
-    def get_bugrefs(self, job_id):
-        bugrefs = set()
-        comments = requests.get('{}jobs/{}/comments'.format(self.OPENQA_API_BASE, job_id), verify=False).json()
-        if 'error' in comments:
-            raise RuntimeError(comments)
-        for comment in comments:
-            for bug in comment['bugrefs']:
-                bugrefs.add(bug)
-        return bugrefs
-
     def add_comment(self, job, comment):
         self.logger.info('Add a comment to {} with reference {}'.format(job, comment))
         cmd = 'openqa-cli api --host {} -X POST jobs/{}/comments text=\'{}\''.format(self.OPENQA_URL_BASE, job.id,

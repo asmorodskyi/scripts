@@ -2,13 +2,11 @@
 <html>
    <head>
       <style>
-         .tiC {color: rgb(51, 153, 255);font-family: sans-serif;}
-         .mC {color: rgb(102, 102, 153);font-family:cursive; font-weight: bold;}
-         .wC{color: rgb(102, 102, 153);font-family:cursive;}
-         .tyC{color: rgb(191, 64, 128);font-family:cursive;}
-         .rC{color: rgb(79, 108, 209);font-family:cursive; font-weight: bold;}
-         .cC{color: rgb(0, 128, 43);font-family:cursive; font-weight: bold;font-size: 16px;}
-         .sC{color: rgb(255, 170, 0);font-family:cursive; font-weight: bold;font-size: 16px;}
+         .passed{color: rgb(32, 191, 13);font-family:cursive; font-weight: bold;}
+         .failed{color: rgb(252, 3, 3);font-family:cursive; font-weight: bold;font-size: 16px;}
+         body {
+          color: rgb(10, 10, 10);font-family:cursive; font-weight: bold;font-size: 16px;
+         }
          table, th, td {
          border: 3px solid black;
          border-collapse: collapse;
@@ -26,15 +24,17 @@
             <th>Result</th>
             <th>HDD</th>
             <th>Failed Modules</th>
+            <th>BugRefs</th>
          </tr>
          {% for item in items %}
-         <tr>
-            <td>{{item.id}}</td>
-            <td {% if item.result is equalto 'failed'%} class=".sC" {% endif %}>{{item.name}}</td>
-            <td {% if item.result is equalto 'failed'%} class=".cC" {% endif %}>{{item.instance_type}}</td>
-            <td {% if item.result is equalto 'failed'%} class=".rC" {% endif %}>{{item.result}}</td>
+         <tr {% if item.result is equalto 'failed'%} class="failed" {% else %} class="passed" {% endif %}>
+            <td><a href="{{baseurl}}{{item.id}}">{{item.id}}</a></td>
+            <td>{{item.name}}</td>
+            <td>{{item.instance_type}}</td>
+            <td>{{item.result}}</td>
             <td>{{item.hdd}}</td>
             <td>{{item.failed_modules}}</td>
+            <td>{{item.bugrefs}}</td>
          </tr>
          {% endfor %}
       </table>
