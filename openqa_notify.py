@@ -25,7 +25,7 @@ def msg_cb(ch, method, properties, body):
         msg = json.loads(body)
         if is_matched(notifier.rules_compiled, topic, msg):
             notifier.logger.info("{}: {}".format(topic, msg))
-            # notifier.handle_job_done(msg)
+            notifier.handle_job_done(msg)
     except ValueError:
         notifier.logger.warn("Invalid msg: {} -> {}".format(topic, body))
 
@@ -45,6 +45,9 @@ class openQANotify(openQAHelper):
             fcntl.lockf(self.fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError:
             sys.exit(0)
+        jinjaEnv = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath="/scripts/"))
+        self.notify_template_html = jinjaEnv.get_template("notify_template.html")
+        self.notify_template_txt = jinjaEnv.get_template("notify_template.txt")
         for rule in rules_defined:
             self.rules_compiled.append(
                 (re.compile(rule[0].replace('.', '\.').replace('*', '[^.]*').replace('#', '.*')), rule[1]))
@@ -68,37 +71,34 @@ class openQANotify(openQAHelper):
                     channel.stop_consuming()
                 time.sleep(5)
 
-    def generate_report(self, groupid):
-        self.refresh_cache(groupid)
+    def generate_report(self, jobs):
+        txt_report = self.notify_template_txt.render(
+            items=jobs, build=jobs[0].build, flavor=jobs[0].flavor, group=jobs[0].groupid)
+        html_report = self.notify_template_html.render(
+            items=jobs, build=jobs[0].build, flavor=jobs[0].flavor, group=jobs[0].groupid, baseurl=self.OPENQA_URL_BASE + "t")
+        self.send_mail('openQANotify', txt_report, 'asmorodskyi@suse.com, cfamullaconrad@suse.de', html_report)
+
+    def handle_job_done(self, msg):
+        self.refresh_cache(msg['group_id'])
         latest_build = self.get_latest_build(groupid)
-        jobs = self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == groupid).all()
+        if self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == msg['group_id']).\
+           filter(JobORM.needs_update.is_(True)).count():
+            self.logger.info("Some jobs are still not done in {} group for {} build".format(
+                self.groupID_to_name(msg['group_id'], latest_build)))
+            return
+        jobs = self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == msg['group_id']).all()
         for job in jobs:
             if job.result == 'failed':
                 job.bugrefs = self.get_bugrefs(job.id)
             else:
                 job.bugrefs = ''
-        jinjaEnv = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath="/scripts/"))
-        notify_template_html = jinjaEnv.get_template("notify_template.html")
-        notify_template_txt = jinjaEnv.get_template("notify_template.txt")
-
-        txt_report = notify_template_txt.render(
-            items=jobs, build=jobs[0].build, flavor=jobs[0].flavor, group=jobs[0].groupid)
-
-        html_report = notify_template_html.render(
-            items=jobs, build=jobs[0].build, flavor=jobs[0].flavor, group=jobs[0].groupid, baseurl=self.OPENQA_URL_BASE + "t")
-
-        self.send_mail('openQANotify', txt_report, 'asmorodskyi@suse.com, cfamullaconrad@suse.de', html_report)
-
-    # def handle_job_done(self, msg):
- #   self.refresh_cache(msg['group_id'])
- #   job = self.get
+        self.generate_report(jobs)
 
 
 def main():
     global notifier
     notifier = openQANotify()
-    # notifier.generate_report(275)
-    # notifier.run()
+    notifier.run()
 
 
 if __name__ == "__main__":
