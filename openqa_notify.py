@@ -75,7 +75,8 @@ class openQANotify(openQAHelper):
         txt_report = self.notify_template_txt.render(
             items=jobs, build=jobs[0].build, flavor=jobs[0].flavor, group=jobs[0].groupid)
         html_report = self.notify_template_html.render(
-            items=jobs, build=jobs[0].build, flavor=jobs[0].flavor, group=jobs[0].groupid, baseurl=self.OPENQA_URL_BASE + "t")
+            items=jobs, build=jobs[0].build, flavor=jobs[0].flavor, group=jobs[0].groupid, baseurl=self.OPENQA_URL_BASE + "t",
+            HDD=jobs[0].hdd)
         self.send_mail('openQANotify', txt_report, 'asmorodskyi@suse.com, cfamullaconrad@suse.de', html_report)
 
     def handle_job_done(self, msg):
@@ -84,7 +85,7 @@ class openQANotify(openQAHelper):
         if self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == msg['group_id']).\
            filter(JobORM.needs_update.is_(True)).count():
             self.logger.info("Some jobs are still not done in {} group for {} build".format(
-                self.groupID_to_name(msg['group_id'], latest_build)))
+                self.groupID_to_name(msg['group_id']), latest_build))
             return
         jobs = self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == msg['group_id']).all()
         for job in jobs:

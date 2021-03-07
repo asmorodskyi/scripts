@@ -15,26 +15,24 @@
       </style>
    </head>
    <body>
-      <p>Build={{build}}, Flavor = {{flavor}}, Group = {{group}}</p>
+      <p>Build={{build}}, Flavor = {{flavor}}, Group = {{group}}, HDD = {{HDD}}</p>
       <table>
          <tr>
             <th>ID</th>
             <th>Name</th>
             <th>Instance Type</th>
             <th>Result</th>
-            <th>HDD</th>
             <th>Failed Modules</th>
             <th>BugRefs</th>
          </tr>
          {% for item in items %}
-         <tr {% if item.result is equalto 'failed'%} class="failed" {% else %} class="passed" {% endif %}>
+         <tr class={{item.result}}>
             <td><a href="{{baseurl}}{{item.id}}">{{item.id}}</a></td>
             <td>{{item.name}}</td>
             <td>{{item.instance_type}}</td>
             <td>{{item.result}}</td>
-            <td>{{item.hdd}}</td>
             <td>{{item.failed_modules}}</td>
-            <td>{{item.bugrefs}}</td>
+            <td>{% if item.bugrefs %}{{item.bugrefs}}{% endif %}</td>
          </tr>
          {% endfor %}
       </table>
