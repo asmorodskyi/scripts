@@ -6,6 +6,7 @@ import sys
 import time
 import urllib3
 import jinja2
+import argparse
 
 import pika
 
@@ -31,9 +32,10 @@ def msg_cb(ch, method, properties, body):
 
 
 class openQANotify(openQAHelper):
+    to_list = 'asmorodskyi@suse.com, cfamullaconrad@suse.de'
 
-    def __init__(self):
-        super(openQANotify, self).__init__("openqanotify", False, log_to_file=True, load_cache=True)
+    def __init__(self, groupid):
+        super(openQANotify, self).__init__("openqanotify", False, log_to_file=True, load_cache=True, groupid=groupid)
         self.rules_compiled = []
         self.binding_key = "suse.openqa.job.done"
         rules_defined = [(self.binding_key, lambda t, m: m.get('group_id', "") in self.my_osd_groups)]
@@ -77,7 +79,7 @@ class openQANotify(openQAHelper):
         html_report = self.notify_template_html.render(
             items=jobs, build=jobs[0].build, flavor=jobs[0].flavor, group=jobs[0].groupid, baseurl=self.OPENQA_URL_BASE + "t",
             HDD=jobs[0].hdd)
-        self.send_mail('openQANotify', txt_report, 'asmorodskyi@suse.com, cfamullaconrad@suse.de', html_report)
+        self.send_mail('[Openqa-Notify]', txt_report, self.to_list, html_report)
 
     def handle_job_done(self, msg):
         self.refresh_cache(msg['group_id'])
@@ -97,8 +99,11 @@ class openQANotify(openQAHelper):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--groupid')
+    args = parser.parse_args()
     global notifier
-    notifier = openQANotify()
+    notifier = openQANotify(args.groupid)
     notifier.run()
 
 
