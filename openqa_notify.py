@@ -80,7 +80,7 @@ class openQANotify(openQAHelper):
 
     def handle_job_done(self, msg):
         self.refresh_cache(msg['group_id'])
-        latest_build = self.get_latest_build(groupid)
+        latest_build = self.get_latest_build(msg['group_id'])
         if self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == msg['group_id']).\
            filter(JobORM.needs_update.is_(True)).count():
             self.logger.info("Some jobs are still not done in {} group for {} build".format(
