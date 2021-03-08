@@ -15,11 +15,12 @@
       </style>
    </head>
    <body>
-      <p>Build={{build}}, Flavor = {{flavor}}, Group = {{group}}, HDD = {{HDD}}</p>
+      <p>Build={{build}}, Group = {{group}}, HDD = {{HDD}}</p>
       <table>
          <tr>
             <th>ID</th>
             <th>Name</th>
+            <th>Flavor</th>
             <th>Instance Type</th>
             <th>Result</th>
             <th>Failed Modules</th>
@@ -29,6 +30,7 @@
          <tr class={{item.result}}>
             <td><a href="{{baseurl}}{{item.id}}">{{item.id}}</a></td>
             <td>{{item.name}}</td>
+            <td>{{item.flavor}}</td>
             <td>{{item.instance_type}}</td>
             <td>{{item.result}}</td>
             <td>{{item.failed_modules}}</td>

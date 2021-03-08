@@ -75,11 +75,9 @@ class openQANotify(openQAHelper):
                 time.sleep(5)
 
     def generate_report(self, jobs):
-        txt_report = self.notify_template_txt.render(
-            items=jobs, build=jobs[0].build, flavor=jobs[0].flavor, group=jobs[0].groupid)
+        txt_report = self.notify_template_txt.render(items=jobs, build=jobs[0].build, group=jobs[0].groupid)
         html_report = self.notify_template_html.render(
-            items=jobs, build=jobs[0].build, flavor=jobs[0].flavor, group=jobs[0].groupid, baseurl=self.OPENQA_URL_BASE + "t",
-            HDD=jobs[0].hdd)
+            items=jobs, build=jobs[0].build, group=jobs[0].groupid, baseurl=self.OPENQA_URL_BASE + "t", HDD=jobs[0].hdd)
         self.send_mail('[Openqa-Notify]', txt_report, self.to_list, html_report)
 
     def handle_job_done(self, msg):
