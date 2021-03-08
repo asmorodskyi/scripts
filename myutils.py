@@ -22,7 +22,7 @@ class TaskHelper:
         self.name = name
         self.config = configparser.ConfigParser()
         self.config.read('/etc/{}.ini'.format(self.name))
-        self.to_list = config.get('DEFAULT', 'to_list', fallback='asmorodskyi@suse.com')
+        self.to_list = self.config.get('DEFAULT', 'to_list', fallback='asmorodskyi@suse.com')
         if self.config['DEFAULT'].getboolean('log_to_file', fallback=True):
             self.logger = logzero.setup_logger(
                 name=name, logfile='/var/log/{0}/{0}.log'.format(self.name), formatter=logzero.LogFormatter(
@@ -145,6 +145,8 @@ class openQAHelper(TaskHelper):
             return "PC Tools Image"
         elif groupid == 131:
             return "SLES JeOS"
+        elif groupid == 313:
+            return "Containers Latest"
         else:
             return str(groupid)
 

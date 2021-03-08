@@ -94,6 +94,18 @@ class openQANotify(openQAHelper):
         for job in jobs:
             if job.result == 'failed':
                 job.bugrefs = self.get_bugrefs(job.id)
+                formated_bugrefs = []
+                for bug in job.bugrefs:
+                    rez = re.search('(poo|bsc)\#(\d+)', bug)
+                    if rez.group(1) == 'poo':
+                        formated_bugrefs.append(
+                            {'href': 'https://progress.opensuse.org/issues/{}'.format(rez.group(2)), 'name': bug})
+                    elif rez.group(1) == 'bsc':
+                        formated_bugrefs.append(
+                            {'href': 'https://bugzilla.suse.com/show_bug.cgi?id={}'.format(rez.group(2)), 'name': bug})
+                    else:
+                        formated_bugrefs.append({'href': '', 'name': bug})
+                job.bugrefs = formated_bugrefs
             else:
                 job.bugrefs = ''
         self.generate_report(jobs)

@@ -34,7 +34,10 @@
  {% if pc %}<td>{{item.instance_type}}</td> {% endif %}
             <td>{{item.result}}</td>
             <td>{{item.failed_modules}}</td>
-            <td>{% if item.bugrefs %}{{item.bugrefs}}{% endif %}</td>
+            <td>{% if item.bugrefs %}
+            {% for b1 in item.bugrefs %}
+               <a href="{{ b1.href }}">{{ b1.name }}</a>
+            {% endfor %}{% endif %}</td>
          </tr>
          {% endfor %}
       </table>
