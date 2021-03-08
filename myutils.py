@@ -117,8 +117,6 @@ class openQAHelper(TaskHelper):
             self.session = Session()
             self.job_query = self.session.query(JobORM)
             self.logger.info("{} objects was in cache".format(self.job_query.count()))
-            for gr_id in self.my_osd_groups:
-                self.refresh_cache(gr_id)
 
     def get_previous_builds(self, job_group_id: int, deep: int = 3):
         builds = []

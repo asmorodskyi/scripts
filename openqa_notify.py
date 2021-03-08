@@ -43,10 +43,11 @@ class openQANotify(openQAHelper):
         pid_file = '/tmp/suse_notify.lock'
         self.fp = open(pid_file, 'w')
         try:
-            self.logger.info("Check if another instance is running ....")
             fcntl.lockf(self.fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError:
             sys.exit(0)
+        for gr_id in self.my_osd_groups:
+            self.refresh_cache(gr_id)
         jinjaEnv = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath="/scripts/"))
         self.notify_template_html = jinjaEnv.get_template("notify_template.html")
         self.notify_template_txt = jinjaEnv.get_template("notify_template.txt")

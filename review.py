@@ -18,6 +18,8 @@ class Review(openQAHelper):
         super(Review, self).__init__('review', False, log_to_file=False, load_cache=True, groupid=groupid)
         self.dry_run = dry_run
         self.apply_known = apply_known
+        for gr_id in self.my_osd_groups:
+            self.refresh_cache(gr_id)
 
     def run(self):
         for groupid in self.my_osd_groups:

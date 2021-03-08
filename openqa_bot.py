@@ -53,6 +53,8 @@ class openQABot(openQAHelper):
             fcntl.lockf(self.fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError:
             sys.exit(0)
+        for gr_id in self.my_osd_groups:
+            self.refresh_cache(gr_id)
         for rule in rules_defined:
             self.rules_compiled.append(
                 (re.compile(rule[0].replace('.', '\.').replace('*', '[^.]*').replace('#', '.*')), rule[1]))
