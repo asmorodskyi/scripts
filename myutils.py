@@ -13,13 +13,16 @@ from git import Repo
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, JobORM
+import configparser
 
 
 class TaskHelper:
 
-    def __init__(self, name, log_to_file=True):
+    def __init__(self, name):
         self.name = name
-        if log_to_file:
+        self.config = configparser.ConfigParser()
+        self.config.read('/etc/{}.ini'.format(self.name))
+        if self.config['DEFAULT'].getboolean('log_to_file', fallback=True):
             self.logger = logzero.setup_logger(
                 name=name, logfile='/var/log/{0}/{0}.log'.format(self.name), formatter=logzero.LogFormatter(
                     fmt='%(color)s[%(asctime)s %(module)s:%(lineno)d]%(end_color)s %(message)s',
@@ -86,7 +89,7 @@ class TaskHelper:
 class GitHelper(TaskHelper):
 
     def __init__(self):
-        super().__init__("GitHelper", log_to_file=False)
+        super().__init__("GitHelper")
         self.repo = Repo(os.getcwd())
         self.remote = None
         try:
@@ -98,8 +101,8 @@ class GitHelper(TaskHelper):
 
 class openQAHelper(TaskHelper):
 
-    def __init__(self, name, for_o3, log_to_file=False, load_cache=False, groupid: str = None):
-        super(openQAHelper, self).__init__(name, log_to_file=log_to_file)
+    def __init__(self, name, for_o3, load_cache=False, groupid: str = None):
+        super(openQAHelper, self).__init__(name)
         self.for_o3 = for_o3
         if groupid:
             self.my_osd_groups = [int(num_str) for num_str in str(groupid).split(',')]

@@ -35,7 +35,7 @@ class openQANotify(openQAHelper):
     to_list = 'asmorodskyi@suse.com, cfamullaconrad@suse.de'
 
     def __init__(self, groupid):
-        super(openQANotify, self).__init__("openqanotify", False, log_to_file=True, load_cache=True, groupid=groupid)
+        super(openQANotify, self).__init__("openqanotify", False, load_cache=True, groupid=groupid)
         self.rules_compiled = []
         self.binding_key = "suse.openqa.job.done"
         rules_defined = [(self.binding_key, lambda t, m: m.get('group_id', "") in self.my_osd_groups)]

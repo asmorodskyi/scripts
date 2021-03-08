@@ -15,7 +15,7 @@ class Review(openQAHelper):
     known_json = '/scripts/known.json'
 
     def __init__(self, dry_run: bool = False, apply_known: bool = False, groupid: str = None):
-        super(Review, self).__init__('review', False, log_to_file=False, load_cache=True, groupid=groupid)
+        super(Review, self).__init__('review', False, load_cache=True, groupid=groupid)
         self.dry_run = dry_run
         self.apply_known = apply_known
         for gr_id in self.my_osd_groups:

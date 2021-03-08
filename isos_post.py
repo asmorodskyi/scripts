@@ -121,7 +121,7 @@ class IsosPost(TaskHelper):
 
 
 def main():
-    solver = IsosPost('isospost', log_to_file=False)
+    solver = IsosPost('isospost')
     solver.run()
 
 

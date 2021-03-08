@@ -30,7 +30,7 @@ def msg_cb(ch, method, properties, body):
 class openQABot(openQAHelper):
 
     def __init__(self, for_o3):
-        super(openQABot, self).__init__('openqabot', for_o3, log_to_file=True, load_cache=False)
+        super(openQABot, self).__init__('openqabot', for_o3, load_cache=False)
         self.rules_compiled = []
         if self.for_o3:
             self.binding_key = "opensuse.openqa.job.done"
