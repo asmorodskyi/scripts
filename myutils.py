@@ -22,6 +22,7 @@ class TaskHelper:
         self.name = name
         self.config = configparser.ConfigParser()
         self.config.read('/etc/{}.ini'.format(self.name))
+        self.to_list = config.get('DEFAULT', 'to_list', fallback='asmorodskyi@suse.com')
         if self.config['DEFAULT'].getboolean('log_to_file', fallback=True):
             self.logger = logzero.setup_logger(
                 name=name, logfile='/var/log/{0}/{0}.log'.format(self.name), formatter=logzero.LogFormatter(
@@ -32,7 +33,7 @@ class TaskHelper:
                 name=name, formatter=logzero.LogFormatter(
                     fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
 
-    def send_mail(self, subject, message, to_list, html_message: str = None):
+    def send_mail(self, subject, message, html_message: str = None):
         try:
             if html_message:
                 mimetext = MIMEMultipart('alternative')
@@ -44,10 +45,10 @@ class TaskHelper:
                 mimetext = MIMEText(message)
             mimetext['Subject'] = subject
             mimetext['From'] = 'asmorodskyi@suse.com'
-            mimetext['To'] = to_list
+            mimetext['To'] = self.to_list
             server = smtplib.SMTP('relay.suse.de', 25)
             server.ehlo()
-            server.sendmail('asmorodskyi@suse.com', to_list.split(','), mimetext.as_string())
+            server.sendmail('asmorodskyi@suse.com', self.to_list.split(','), mimetext.as_string())
         except Exception:
             self.logger.error("Fail to send email - {}".format(traceback.format_exc()))
 
@@ -55,7 +56,7 @@ class TaskHelper:
         if not error:
             error = traceback.format_exc()
         self.logger.error(error)
-        self.send_mail('[{}] ERROR - {}'.format(self.name, socket.gethostname()), error, 'asmorodskyi@suse.com')
+        self.send_mail('[{}] ERROR - {}'.format(self.name, socket.gethostname()), error)
 
     def get_latest_build(self, job_group_id=262):
         build = '1'

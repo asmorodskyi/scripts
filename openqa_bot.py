@@ -75,8 +75,7 @@ class openQABot(openQAHelper):
         Disk={disk}
         JobID={jobURL}
     '''.format(build=msg['BUILD'], flavor=msg['FLAVOR'], disk=hdd, jobURL=job_url)
-        super().send_mail('[Openqa-Notify] {}'.format(subj_text), message,
-                          'asmorodskyi@suse.com, cfamullaconrad@suse.de')
+        super().send_mail('[Openqa-Notify] {}'.format(subj_text), message)
 
     def run(self):
         while True:

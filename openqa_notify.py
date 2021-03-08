@@ -32,7 +32,6 @@ def msg_cb(ch, method, properties, body):
 
 
 class openQANotify(openQAHelper):
-    to_list = 'asmorodskyi@suse.com, cfamullaconrad@suse.de'
 
     def __init__(self, groupid):
         super(openQANotify, self).__init__("openqanotify", False, load_cache=True, groupid=groupid)
@@ -81,7 +80,7 @@ class openQANotify(openQAHelper):
         txt_report = self.notify_template_txt.render(items=jobs, build=build, group=group_name, pc=pc)
         html_report = self.notify_template_html.render(
             items=jobs, build=build, group=group_name, baseurl=self.OPENQA_URL_BASE + "t", pc=pc)
-        self.send_mail('[Openqa-Notify] New build in {}'.format(group_name), txt_report, self.to_list, html_report)
+        self.send_mail('[Openqa-Notify] New build in {}'.format(group_name), txt_report, html_report)
 
     def handle_job_done(self, groupid):
         self.refresh_cache(groupid)
