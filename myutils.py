@@ -33,7 +33,7 @@ class TaskHelper:
                 name=name, formatter=logzero.LogFormatter(
                     fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
 
-    def send_mail(self, subject, message, html_message: str = None):
+    def send_mail(self, subject, message, html_message: str = None, custom_to_list: str = None):
         try:
             if html_message:
                 mimetext = MIMEMultipart('alternative')
@@ -45,10 +45,12 @@ class TaskHelper:
                 mimetext = MIMEText(message)
             mimetext['Subject'] = subject
             mimetext['From'] = 'asmorodskyi@suse.com'
-            mimetext['To'] = self.to_list
+            if not custom_to_list:
+                custom_to_list = self.to_list
+            mimetext['To'] = custom_to_list
             server = smtplib.SMTP('relay.suse.de', 25)
             server.ehlo()
-            server.sendmail('asmorodskyi@suse.com', self.to_list.split(','), mimetext.as_string())
+            server.sendmail('asmorodskyi@suse.com', custom_to_list.split(','), mimetext.as_string())
         except Exception:
             self.logger.error("Fail to send email - {}".format(traceback.format_exc()))
 
