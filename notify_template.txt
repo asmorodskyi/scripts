@@ -1,8 +1,8 @@
-Build={{build}}, Flavor = {{flavor}}, Group = {{group}}, HDD = {{HDD}}
+Build={{build}}, Flavor = {{flavor}}, Group = {{group}}
 ======================================================================================================================
-+ID      || Name     || Flavor || Instance Type   ||  Result   || Failed Modules     ||  BugRefs               +
++ID      || Name     || Flavor ||{% if pc %} Instance Type   ||{% endif %}  Result   || Failed Modules     ||  BugRefs               +
 ======================================================================================================================
 {% for item in items %}
-+{{item.id}}||{{item.name}}||{{item.flavor}}||{{item.instance_type}}||{{item.result}}||{{item.failed_modules}}||{{item.bugrefs}}+
++{{item.id}}||{{item.name}}||{{item.flavor}}||{% if pc %}{{item.instance_type}}||{% endif %}{{item.result}}||{{item.failed_modules}}||{{item.bugrefs}}+
 {% endfor %}
 =======================================================================================================================

@@ -75,10 +75,13 @@ class openQANotify(openQAHelper):
                 time.sleep(5)
 
     def generate_report(self, jobs):
-        txt_report = self.notify_template_txt.render(items=jobs, build=jobs[0].build, group=jobs[0].groupid)
+        group_name = self.groupID_to_name(jobs[0].groupid)
+        pc = bool(jobs[0].instance_type != 'N/A')
+        build = jobs[0].build
+        txt_report = self.notify_template_txt.render(items=jobs, build=build, group=group_name, pc=pc)
         html_report = self.notify_template_html.render(
-            items=jobs, build=jobs[0].build, group=jobs[0].groupid, baseurl=self.OPENQA_URL_BASE + "t", HDD=jobs[0].hdd)
-        self.send_mail('[Openqa-Notify]', txt_report, self.to_list, html_report)
+            items=jobs, build=build, group=group_name, baseurl=self.OPENQA_URL_BASE + "t", pc=pc)
+        self.send_mail('[Openqa-Notify] New build in {}'.format(group_name), txt_report, self.to_list, html_report)
 
     def handle_job_done(self, groupid):
         self.refresh_cache(groupid)
