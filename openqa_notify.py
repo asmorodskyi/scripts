@@ -26,7 +26,7 @@ def msg_cb(ch, method, properties, body):
         msg = json.loads(body)
         if is_matched(notifier.rules_compiled, topic, msg):
             notifier.logger.info("{}: {}".format(topic, msg))
-            notifier.handle_job_done(msg)
+            notifier.handle_job_done(msg['group_id'])
     except ValueError:
         notifier.logger.warn("Invalid msg: {} -> {}".format(topic, body))
 
@@ -80,15 +80,15 @@ class openQANotify(openQAHelper):
             items=jobs, build=jobs[0].build, group=jobs[0].groupid, baseurl=self.OPENQA_URL_BASE + "t", HDD=jobs[0].hdd)
         self.send_mail('[Openqa-Notify]', txt_report, self.to_list, html_report)
 
-    def handle_job_done(self, msg):
-        self.refresh_cache(msg['group_id'])
-        latest_build = self.get_latest_build(msg['group_id'])
-        if self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == msg['group_id']).\
+    def handle_job_done(self, groupid):
+        self.refresh_cache(groupid)
+        latest_build = self.get_latest_build(groupid)
+        if self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == groupid).\
            filter(JobORM.needs_update.is_(True)).count():
             self.logger.info("Some jobs are still not done in {} group for {} build".format(
-                self.groupID_to_name(msg['group_id']), latest_build))
+                self.groupID_to_name(groupid), latest_build))
             return
-        jobs = self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == msg['group_id']).all()
+        jobs = self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == groupid).all()
         for job in jobs:
             if job.result == 'failed':
                 job.bugrefs = self.get_bugrefs(job.id)
@@ -100,10 +100,15 @@ class openQANotify(openQAHelper):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--groupid')
+    parser.add_argument('--generate_report', action='store_true')
     args = parser.parse_args()
     global notifier
     notifier = openQANotify(args.groupid)
-    notifier.run()
+    if args.generate_report:
+        for group in notifier.my_osd_groups:
+            notifier.handle_job_done(group)
+    else:
+        notifier.run()
 
 
 if __name__ == "__main__":
