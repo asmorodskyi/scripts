@@ -135,7 +135,7 @@ class openQAHelper(TaskHelper):
         job_group_jobs = requests.get(
             '{}job_groups/{}/jobs'.format(self.OPENQA_API_BASE, groupid), verify=False).json()
         self.logger.info('Got {} jobs for {}'.format(
-            len(job_group_jobs['ids']), self.config.get(groupid, 'name', fallback=groupid)))
+            len(job_group_jobs['ids']), self.config.get(str(groupid), 'name', fallback=groupid)))
         for groupid in job_group_jobs['ids']:
             job_orm = self.job_query.get(groupid)
             if job_orm:

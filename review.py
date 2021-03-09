@@ -26,7 +26,7 @@ class Review(openQAHelper):
             latest_build = self.get_latest_build(groupid)
             previous_builds = self.get_previous_builds(groupid)
             self.logger.info('{} is latest build for {}'.format(
-                latest_build, self.config.get(groupid, 'name', fallback=groupid)))
+                latest_build, self.config.get(str(groupid), 'name', fallback=groupid)))
             for job in self.job_query.filter(JobORM.build == latest_build).filter(JobORM.needs_update == False).\
                     filter(JobORM.result.notin_(['passed', 'skipped', 'parallel_failed'])).\
                     filter(JobORM.groupid == groupid).all():

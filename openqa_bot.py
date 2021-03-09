@@ -63,7 +63,7 @@ class openQABot(openQAHelper):
         else:
             subj_text = 'SUSE.DE - '
         subj_text += "{}-{}-{}".format(msg['TEST'], msg['ARCH'],
-                                       self.config.get(msg['group_id'], 'name', fallback=msg['group_id']))
+                                       self.config.get(str(msg['group_id']), 'name', fallback=msg['group_id']))
         job_url = '{}t{}'.format(self.OPENQA_URL_BASE, msg['id'])
         hdd = 'None'
         if 'HDD_1' in msg:
