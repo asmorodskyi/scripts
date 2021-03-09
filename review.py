@@ -14,8 +14,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 class Review(openQAHelper):
     known_json = '/scripts/known.json'
 
-    def __init__(self, dry_run: bool = False, apply_known: bool = False, groupid: str = None):
-        super(Review, self).__init__('review', False, load_cache=True, groupid=groupid)
+    def __init__(self, dry_run: bool = False, apply_known: bool = False):
+        super(Review, self).__init__('review', False, load_cache=True)
         self.dry_run = dry_run
         self.apply_known = apply_known
         for gr_id in self.my_osd_groups:
@@ -70,10 +70,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dry_run', action='store_true')
     parser.add_argument('--apply_known', action='store_true')
-    parser.add_argument('--groupid')
     args = parser.parse_args()
 
-    review = Review(args.dry_run, args.apply_known, args.groupid)
+    review = Review(args.dry_run, args.apply_known)
     review.run()
 
 

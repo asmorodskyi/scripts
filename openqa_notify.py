@@ -33,8 +33,8 @@ def msg_cb(ch, method, properties, body):
 
 class openQANotify(openQAHelper):
 
-    def __init__(self, groupid):
-        super(openQANotify, self).__init__("openqanotify", False, load_cache=True, groupid=groupid)
+    def __init__(self):
+        super(openQANotify, self).__init__("openqanotify", False, load_cache=True)
         self.rules_compiled = []
         self.binding_key = "suse.openqa.job.done"
         rules_defined = [(self.binding_key, lambda t, m: m.get('group_id', "") in self.my_osd_groups)]
@@ -114,11 +114,10 @@ class openQANotify(openQAHelper):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--groupid')
     parser.add_argument('--generate_report', action='store_true')
     args = parser.parse_args()
     global notifier
-    notifier = openQANotify(args.groupid)
+    notifier = openQANotify()
     if args.generate_report:
         for group in notifier.my_osd_groups:
             notifier.handle_job_done(group)
