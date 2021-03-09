@@ -74,14 +74,14 @@ class openQANotify(openQAHelper):
                 time.sleep(5)
 
     def generate_report(self, jobs):
-        group_name = self.groupID_to_name(jobs[0].groupid)
+        group_name = self.config.get(jobs[0].groupid, 'name', fallback=jobs[0].groupid)
         pc = bool(jobs[0].instance_type != 'N/A')
         build = jobs[0].build
         txt_report = self.notify_template_txt.render(items=jobs, build=build, group=group_name, pc=pc)
         html_report = self.notify_template_html.render(
             items=jobs, build=build, group=group_name, baseurl=self.OPENQA_URL_BASE + "t", pc=pc)
         self.send_mail('[Openqa-Notify] New build in {}'.format(group_name), txt_report,
-                       html_report, self.config.get(group_name, 'to_list', fallback=None))
+                       html_report, self.config.get(jobs[0].groupid, 'to_list', fallback=None))
 
     def handle_job_done(self, groupid):
         self.refresh_cache(groupid)
@@ -89,7 +89,7 @@ class openQANotify(openQAHelper):
         if self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == groupid).\
            filter(JobORM.needs_update.is_(True)).count():
             self.logger.info("Some jobs are still not done in {} group for {} build".format(
-                self.groupID_to_name(groupid), latest_build))
+                self.config.get(groupid, 'name', fallback=groupid), latest_build))
             return
         jobs = self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == groupid).all()
         for job in jobs:

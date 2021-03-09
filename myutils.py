@@ -131,41 +131,11 @@ class openQAHelper(TaskHelper):
                 builds.append(group_json['build_results'][i + 1]['build'])
         return builds
 
-    def groupID_to_name(self, groupid):
-        groupid = int(groupid)
-        if groupid == 170 or groupid == 262:
-            return "Network"
-        elif groupid == 219:
-            return "Azure"
-        elif groupid == 274:
-            return "EC2"
-        elif groupid == 275:
-            return "GCE"
-        elif groupid == 276:
-            return "PC Tools Image"
-        elif groupid == 131:
-            return "SLES JeOS"
-        elif groupid == 313:
-            return "Containers Latest"
-        elif groupid == 352:
-            return "Maintenance: Containers 15 SP2 Updates"
-        elif groupid == 353:
-            return "Maintenance: Containers 15 SP1 Updates"
-        elif groupid == 357:
-            return "Maintenance: Containers 15 GA Updates"
-        elif groupid == 355:
-            return "Maintenance: Containers 12 SP5 Updates"
-        elif groupid == 354:
-            return "Maintenance: Containers 12 SP4 Updates"
-        elif groupid == 358:
-            return "Maintenance: Containers 12 SP3 Updates"
-        else:
-            return str(groupid)
-
     def refresh_cache(self, groupid):
         job_group_jobs = requests.get(
             '{}job_groups/{}/jobs'.format(self.OPENQA_API_BASE, groupid), verify=False).json()
-        self.logger.info('Got {} jobs for {}'.format(len(job_group_jobs['ids']), self.groupID_to_name(groupid)))
+        self.logger.info('Got {} jobs for {}'.format(
+            len(job_group_jobs['ids']), self.config.get(groupid, 'name', fallback=groupid)))
         for groupid in job_group_jobs['ids']:
             job_orm = self.job_query.get(groupid)
             if job_orm:
