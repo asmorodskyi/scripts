@@ -147,6 +147,18 @@ class openQAHelper(TaskHelper):
             return "SLES JeOS"
         elif groupid == 313:
             return "Containers Latest"
+        elif groupid == 352:
+            return "Maintenance: Containers 15 SP2 Updates"
+        elif groupid == 353:
+            return "Maintenance: Containers 15 SP1 Updates"
+        elif groupid == 357:
+            return "Maintenance: Containers 15 GA Updates"
+        elif groupid == 355:
+            return "Maintenance: Containers 12 SP5 Updates"
+        elif groupid == 354:
+            return "Maintenance: Containers 12 SP4 Updates"
+        elif groupid == 358:
+            return "Maintenance: Containers 12 SP3 Updates"
         else:
             return str(groupid)
 
