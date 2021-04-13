@@ -1,13 +1,15 @@
 #!/usr/bin/python3
 
 from myutils import openQAHelper
+from models import JobORM
 import argparse
+import re
 
 
 class SmartClone(openQAHelper):
 
     def __init__(self, args):
-        super(SmartClone, self).__init__('SmartClone', False, load_cache=args.loadcache)
+        super(SmartClone, self).__init__('SmartClone', False, load_cache=True)
         self.cmd = '/usr/share/openqa/script/clone_job.pl --skip-chained-deps --parental-inheritance'
         self.params_str = ''
         if args.params:
@@ -26,25 +28,42 @@ class SmartClone(openQAHelper):
         try:
             ids = jobid.split(',')
             for one_id in ids:
-                self.shell_exec('{} {} {}'.format(
-                    self.cmd, one_id, self.params_str), log=True)
+                self.shell_exec('{} {} {}'.format(self.cmd, one_id, self.params_str), log=True)
         except Exception:
             self.handle_error()
+
+    def query(self, query: str):
+        if query.startswith('allpc'):
+            m = re.match(r"(\w+)=(\w+)", query)
+            groupid = m.group(2)
+            latest_build = self.get_latest_build(groupid)
+            for job in self.job_query.filter(JobORM.build == latest_build).filter(JobORM.needs_update == False).\
+                    filter(JobORM.groupid == groupid).filter(JobORM.name != 'publiccloud_upload_img').all():
+                self.shell_exec('{} {} {}'.format(self.cmd, job.id, self.params_str), log=True)
+        else:
+            raise AttributeError('Unexpected query %s, excpected : allpc=<groupid>')
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--frm', default='openqa.suse.de')
-    parser.add_argument('--params')
-    parser.add_argument('--winst', action='store_true')
-    parser.add_argument('--jobid', required=True)
-    parser.add_argument('--branch')
-    parser.add_argument('--resetworker', action='store_true')
-    parser.add_argument('--loadcache', action='store_true', default=False)
-    parser.add_argument('--github-user', default='asmorodskyi')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-q', '--query')
+    group.add_argument('-j', '--jobid')
+    parser.add_argument('-f', '--frm', default='openqa.suse.de')
+    parser.add_argument('-p', '--params')
+    parser.add_argument('-w', '--winst', action='store_true')
+    parser.add_argument('-b', '--branch')
+    parser.add_argument('-r', '--resetworker', action='store_true')
+    parser.add_argument('-g', '--github-user', default='asmorodskyi')
+
     args = parser.parse_args()
     solver = SmartClone(args)
-    solver.run(args.jobid)
+    if args.query:
+        solver.query(args.query)
+    elif args.jobid:
+        solver.run(args.jobid)
+    else:
+        raise AttributeError('Need to specify --jobid or --query')
 
 
 if __name__ == "__main__":
