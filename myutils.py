@@ -152,6 +152,21 @@ class openQAHelper(TaskHelper):
                 self.session.add(job_orm)
                 self.session.commit()
 
+    def filter_latest(self, all_jobs):
+        unique_jobs = {}
+        for job in all_jobs:
+            if job.instance_type:
+                instance_type = job.instance_type
+            else:
+                instance_type = 'NA'
+            job_key = '{}-{}-{}'.format(job.name, job.flavor, instance_type)
+            if job_key in unique_jobs:
+                if job.id > unique_jobs[job_key]:
+                    unique_jobs[job_key] = job.id
+            else:
+                unique_jobs[job_key] = job.id
+        return unique_jobs
+
     def get_bugrefs(self, job_id):
         bugrefs = set()
         comments = requests.get('{}jobs/{}/comments'.format(self.OPENQA_API_BASE, job_id), verify=False).json()
