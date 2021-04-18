@@ -161,11 +161,11 @@ class openQAHelper(TaskHelper):
                 instance_type = 'NA'
             job_key = '{}-{}-{}'.format(job.name, job.flavor, instance_type)
             if job_key in unique_jobs:
-                if job.id > unique_jobs[job_key]:
-                    unique_jobs[job_key] = job.id
+                if job.id > unique_jobs[job_key].id:
+                    unique_jobs[job_key] = job
             else:
-                unique_jobs[job_key] = job.id
-        return unique_jobs
+                unique_jobs[job_key] = job
+        return unique_jobs.values()
 
     def get_bugrefs(self, job_id):
         bugrefs = set()

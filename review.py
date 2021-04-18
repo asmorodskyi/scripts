@@ -27,9 +27,11 @@ class Review(openQAHelper):
             previous_builds = self.get_previous_builds(groupid)
             self.logger.info('{} is latest build for {}'.format(
                 latest_build, self.config.get(str(groupid), 'name', fallback=groupid)))
-            for job in self.job_query.filter(JobORM.build == latest_build).filter(JobORM.needs_update == False).\
-                    filter(JobORM.result.notin_(['passed', 'skipped', 'parallel_failed'])).\
-                    filter(JobORM.groupid == groupid).all():
+            unique_jobs = self.filter_latest(self.job_query.filter(JobORM.build == latest_build).
+                                             filter(JobORM.needs_update == False).
+                                             filter(JobORM.result.notin_(['passed', 'skipped', 'parallel_failed'])).
+                                             filter(JobORM.groupid == groupid).all())
+            for job in unique_jobs:
                 if self.apply_known:
                     self.apply_known_refs(job)
                 need_review_bugrefs = self.get_bugrefs(job.id)

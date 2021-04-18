@@ -43,8 +43,8 @@ class SmartClone(openQAHelper):
             unique_jobs = self.filter_latest(self.job_query.filter(JobORM.build == latest_build).
                                              filter(JobORM.needs_update == False).filter(JobORM.groupid == groupid).
                                              filter(JobORM.name != 'publiccloud_upload_img').all())
-            for jobkey in unique_jobs:
-                self.shell_exec('{} {} {}'.format(self.cmd, unique_jobs[jobkey], self.params_str), log=True)
+            for job in unique_jobs:
+                self.shell_exec('{} {} {}'.format(self.cmd, job.id, self.params_str), log=True)
         else:
             raise AttributeError('Unexpected query %s, excpected : allpc=<groupid>')
 
