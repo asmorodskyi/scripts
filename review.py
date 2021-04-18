@@ -71,8 +71,8 @@ class Review(openQAHelper):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dry_run', action='store_true')
-    parser.add_argument('--apply_known', action='store_true')
+    parser.add_argument('-d', '--dry_run', action='store_true')
+    parser.add_argument('-a', '--apply_known', action='store_true')
     args = parser.parse_args()
 
     review = Review(args.dry_run, args.apply_known)
