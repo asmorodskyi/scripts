@@ -12,8 +12,9 @@ import json
 from git import Repo
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Base, JobORM
+from models import Base, JobORM, MessageLatency
 import configparser
+from datetime import datetime
 
 
 class TaskHelper:
@@ -120,6 +121,7 @@ class openQAHelper(TaskHelper):
             Session = sessionmaker(bind=engine)
             self.session = Session()
             self.job_query = self.session.query(JobORM)
+            self.msg_query = self.session.query(MessageLatency)
             self.logger.info("{} objects was in cache".format(self.job_query.count()))
 
     def get_previous_builds(self, job_group_id: int, deep: int = 3):
@@ -176,6 +178,20 @@ class openQAHelper(TaskHelper):
             for bug in comment['bugrefs']:
                 bugrefs.add(bug)
         return bugrefs
+
+    def check_latency(self, topic, subject):
+        msg = self.msg_query.filter(MessageLatency.topic == topic).filter(
+            MessageLatency.subject == subject).one_or_none()
+        if msg:
+            if datetime.now() < msg.locked_till:
+                self.logger.info('still locked {}'.format(msg))
+            else:
+                self.logger.info('NOT LOCKED {}'.format(msg))
+            msg.inc_cnt()
+        else:
+            new_msg = MessageLatency(topic, subject)
+            self.session.add(new_msg)
+        self.session.commit()
 
 
 def is_matched(rules, topic, msg):

@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean, PickleType
+from sqlalchemy import Column, Integer, String, Boolean, PickleType, DateTime
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import UniqueConstraint
+from datetime import datetime
 
 Base = declarative_base()
 
@@ -48,6 +50,32 @@ class JobORM(Base):
                   ' failed_modules: {})'
         return pattern.format(self.id, self.name, self.instance_type, self.result, self.state, self.build, self.flavor,
                               self.failed_modules)
+
+
+class MessageLatency(Base):
+
+    __tablename__ = "msglatency"
+
+    def __init__(self, topic, subject):
+        self.topic = topic
+        self.subject = subject
+        self.cnt = 1
+        self.locked_till = datetime.now()
+
+    id = Column(Integer, primary_key=True)
+    topic = Column(String)
+    subject = Column(String)
+    cnt = Column(Integer)
+    locked_till = Column(DateTime)
+    UniqueConstraint('topic', 'subject')
+
+    def __str__(self):
+        return 'MessageLatency(id: {}, topic: {}, subject: {}, cnt: {}, locked_till: {})'.format(self.id, self.topic,
+                                                                                                 self.subject, self.cnt,
+                                                                                                 self.locked_till)
+
+    def inc_cnt(self):
+        self.cnt = self.cnt + 1
 
 
 
