@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean, PickleType, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, PickleType, DateTime, Interval
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import UniqueConstraint
-from datetime import datetime
+from datetime import datetime, timedelta
 
 Base = declarative_base()
 
@@ -61,21 +61,25 @@ class MessageLatency(Base):
         self.subject = subject
         self.cnt = 1
         self.locked_till = datetime.now()
+        self.time_delta = timedelta(hours=1)
 
     id = Column(Integer, primary_key=True)
     topic = Column(String)
     subject = Column(String)
     cnt = Column(Integer)
     locked_till = Column(DateTime)
+    time_delta = Column(Interval)
     UniqueConstraint('topic', 'subject')
 
     def __str__(self):
-        return 'MessageLatency(id: {}, topic: {}, subject: {}, cnt: {}, locked_till: {})'.format(self.id, self.topic,
-                                                                                                 self.subject, self.cnt,
-                                                                                                 self.locked_till)
+        return 'MessageLatency(id: {}, topic: {}, subject: {}, cnt: {},time_delta: {}, locked_till: {})'.format(
+            self.id, self.topic, self.subject, self.cnt, self.time_delta, self.locked_till)
 
     def inc_cnt(self):
         self.cnt = self.cnt + 1
+
+    def lock(self):
+        self.locked_till = self.locked_till + self.time_delta
 
 
 

@@ -182,16 +182,22 @@ class openQAHelper(TaskHelper):
     def check_latency(self, topic, subject):
         msg = self.msg_query.filter(MessageLatency.topic == topic).filter(
             MessageLatency.subject == subject).one_or_none()
+        rez = 0
         if msg:
             if datetime.now() < msg.locked_till:
                 self.logger.info('still locked {}'.format(msg))
+                rez = 3
             else:
-                self.logger.info('NOT LOCKED {}'.format(msg))
+                msg.lock()
+                self.logger.info('Got locked {}'.format(msg))
+                rez = 2
             msg.inc_cnt()
         else:
             new_msg = MessageLatency(topic, subject)
             self.session.add(new_msg)
+            rez = 1
         self.session.commit()
+        return rez
 
 
 def is_matched(rules, topic, msg):
