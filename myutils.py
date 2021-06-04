@@ -15,6 +15,7 @@ from sqlalchemy.orm import sessionmaker
 from models import Base, JobORM, MessageLatency
 import configparser
 from datetime import datetime
+import psycopg2
 
 
 class TaskHelper:
@@ -33,6 +34,10 @@ class TaskHelper:
             self.logger = logzero.setup_logger(
                 name=name, formatter=logzero.LogFormatter(
                     fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
+        if self.config.has_section('OSD'):
+            self.osd_username = self.config.get('OSD', 'username')
+            self.osd_password = self.config.get('OSD', 'password')
+            self.osd_host = self.config.get('OSD', 'host')
 
     def send_mail(self, subject, message, html_message: str = None, custom_to_list: str = None):
         try:
@@ -88,6 +93,20 @@ class TaskHelper:
                 return output
         except subprocess.CalledProcessError:
             self.handle_error('Command died')
+
+    def osd_query(self, query):
+        try:
+            connection = psycopg2.connect(user=self.osd_username, password=self.osd_password,
+                                          host=self.osd_host, port="5432", database="openqa")
+            cursor = connection.cursor()
+            cursor.execute(query)
+            return cursor.fetchall()
+        except (Exception, psycopg2.Error) as error:
+            self.logger.error(error)
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
 
 
 class GitHelper(TaskHelper):
