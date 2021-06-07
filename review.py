@@ -6,7 +6,6 @@ from myutils import openQAHelper
 import argparse
 import urllib3
 import json
-from models import JobORM
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -18,8 +17,6 @@ class Review(openQAHelper):
         super(Review, self).__init__('review', False, load_cache=True)
         self.dry_run = dry_run
         self.apply_known = apply_known
-        for gr_id in self.my_osd_groups:
-            self.refresh_cache(gr_id)
 
     def run(self):
         for groupid in self.my_osd_groups:
@@ -27,16 +24,16 @@ class Review(openQAHelper):
             previous_builds = self.get_previous_builds(groupid)
             self.logger.info('{} is latest build for {}'.format(
                 latest_build, self.config.get(str(groupid), 'name', fallback=groupid)))
-            unique_jobs = self.filter_latest(self.job_query.filter(JobORM.build == latest_build).
-                                             filter(JobORM.needs_update == False).
-                                             filter(JobORM.result.notin_(['passed', 'skipped', 'parallel_failed'])).
-                                             filter(JobORM.groupid == groupid).all())
+            jobs = self.osd_get_jobs_where(
+                latest_build, groupid, " and result not in ('passed', 'skipped', 'parallel_failed')")
+            unique_jobs = self.filter_latest(jobs)
             for job in unique_jobs:
                 if self.apply_known:
                     self.apply_known_refs(job)
                 need_review_bugrefs = self.get_bugrefs(job.id)
                 if len(need_review_bugrefs) == 0:
                     bugrefs = set()
+                    jobs =
                     for previous_job in self.job_query.filter(JobORM.build.in_(previous_builds)).\
                             filter(JobORM.name == job.name).filter(JobORM.instance_type == job.instance_type).\
                             filter(JobORM.flavor == job.flavor).filter(JobORM.failed_modules == job.failed_modules).\

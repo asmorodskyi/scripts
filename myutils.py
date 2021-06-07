@@ -12,7 +12,7 @@ import json
 from git import Repo
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Base, MessageLatency
+from models import Base, MessageLatency, JobSQL
 import configparser
 from datetime import datetime
 import psycopg2
@@ -95,18 +95,21 @@ class TaskHelper:
             self.handle_error('Command died')
 
     def osd_query(self, query):
-        try:
-            connection = psycopg2.connect(user=self.osd_username, password=self.osd_password,
-                                          host=self.osd_host, port="5432", database="openqa")
-            cursor = connection.cursor()
-            cursor.execute(query)
-            return cursor.fetchall()
-        except (Exception, psycopg2.Error) as error:
-            self.logger.error(error)
-        finally:
-            if connection:
-                cursor.close()
-                connection.close()
+        if hasattr(self, 'osd_username') and hasattr(self, 'osd_password') and hasattr(self, 'osd_host'):
+            try:
+                connection = psycopg2.connect(user=self.osd_username, password=self.osd_password,
+                                              host=self.osd_host, port="5432", database="openqa")
+                cursor = connection.cursor()
+                cursor.execute(query)
+                return cursor.fetchall()
+            except (Exception, psycopg2.Error) as error:
+                self.logger.error(error)
+            finally:
+                if connection is not None:
+                    cursor.close()
+                    connection.close()
+        else:
+            raise AttributeError("Connection to osd is not defined ")
 
 
 class GitHelper(TaskHelper):
@@ -153,11 +156,7 @@ class openQAHelper(TaskHelper):
     def filter_latest(self, all_jobs):
         unique_jobs = {}
         for job in all_jobs:
-            if job.instance_type:
-                instance_type = job.instance_type
-            else:
-                instance_type = 'NA'
-            job_key = '{}-{}-{}'.format(job.name, job.flavor, instance_type)
+            job_key = '{}-{}'.format(job.name, job.flavor)
             if job_key in unique_jobs:
                 if job.id > unique_jobs[job_key].id:
                     unique_jobs[job_key] = job
@@ -194,6 +193,14 @@ class openQAHelper(TaskHelper):
             rez = 1
         self.session.commit()
         return rez
+
+    def osd_get_jobs_where(self, build, group_id, extra_conditions=''):
+        rezult = self.osd_query("{} build='{}' and group_id='{}' {}".format(
+            JobSQL.SELECT_QUERY, build, group_id, extra_conditions))
+        jobs = []
+        for raw_job in rezult:
+            jobs.append(JobSQL(raw_job))
+        return jobs
 
 
 def is_matched(rules, topic, msg):

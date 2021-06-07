@@ -88,11 +88,7 @@ class openQANotify(openQAHelper):
             self.logger.info("Some jobs are still not done in {} group for {} build".format(
                 self.config.get(str(groupid), 'name', fallback=groupid), latest_build))
         else:
-            rezult = self.osd_query("select {} from jobs where group_id='{}' and build='{}'".
-                                    format(JobSQL.FIELDS_ORDER, groupid, latest_build))
-            jobs = []
-            for raw_job in rezult:
-                jobs.append(JobSQL(raw_job))
+            jobs = self.osd_get_jobs_where(latest_build, groupid)
             for job in jobs:
                 if job.result == 'failed':
                     bugrefs = self.get_bugrefs(job.id)
