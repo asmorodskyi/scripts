@@ -11,7 +11,7 @@ import argparse
 import pika
 
 from myutils import openQAHelper, is_matched
-from models import JobORM
+from models import JobSQL
 
 global notifier
 
@@ -45,8 +45,6 @@ class openQANotify(openQAHelper):
             fcntl.lockf(self.fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError:
             sys.exit(0)
-        for gr_id in self.my_osd_groups:
-            self.refresh_cache(gr_id)
         jinjaEnv = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath="/scripts/"))
         self.notify_template_html = jinjaEnv.get_template("notify_template.html")
         self.notify_template_txt = jinjaEnv.get_template("notify_template.txt")
@@ -73,43 +71,54 @@ class openQANotify(openQAHelper):
                     channel.stop_consuming()
                 time.sleep(5)
 
-    def generate_report(self, jobs):
-        group_name = self.config.get(str(jobs[0].groupid), 'name', fallback=jobs[0].groupid)
-        pc = bool(jobs[0].instance_type != 'N/A')
-        build = jobs[0].build
-        txt_report = self.notify_template_txt.render(items=jobs, build=build, group=group_name, pc=pc)
+    def generate_report(self, jobs, group_id, build):
+        group_name = self.config.get(str(group_id), 'name', fallback=group_id)
+        txt_report = self.notify_template_txt.render(items=jobs, build=build, group=group_name)
         html_report = self.notify_template_html.render(
-            items=jobs, build=build, group=group_name, baseurl=self.OPENQA_URL_BASE + "t", pc=pc)
+            items=jobs, build=build, group=group_name, baseurl=self.OPENQA_URL_BASE + "t")
         self.send_mail('[Openqa-Notify] New build in {}'.format(group_name), txt_report,
-                       html_report, self.config.get(str(jobs[0].groupid), 'to_list', fallback=None))
+                       html_report, self.config.get(str(group_id), 'to_list', fallback=None))
 
     def handle_job_done(self, groupid):
-        self.refresh_cache(groupid)
         latest_build = self.get_latest_build(groupid)
-        if self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == groupid).\
-           filter(JobORM.needs_update.is_(True)).count():
+        rezult = self.osd_query(
+            "select count(*) from jobs where group_id='{}' and build='{}' and state not in ('done','cancelled')".
+            format(groupid, latest_build))
+        if rezult[0][0] > 0:
             self.logger.info("Some jobs are still not done in {} group for {} build".format(
                 self.config.get(str(groupid), 'name', fallback=groupid), latest_build))
-            return
-        jobs = self.job_query.filter(JobORM.build == latest_build).filter(JobORM.groupid == groupid).all()
-        for job in jobs:
-            if job.result == 'failed':
-                job.bugrefs = self.get_bugrefs(job.id)
-                formated_bugrefs = []
-                for bug in job.bugrefs:
-                    rez = re.search('(poo|bsc)\#(\d+)', bug)
-                    if rez.group(1) == 'poo':
-                        formated_bugrefs.append(
-                            {'href': 'https://progress.opensuse.org/issues/{}'.format(rez.group(2)), 'name': bug})
-                    elif rez.group(1) == 'bsc':
-                        formated_bugrefs.append(
-                            {'href': 'https://bugzilla.suse.com/show_bug.cgi?id={}'.format(rez.group(2)), 'name': bug})
+        else:
+            rezult = self.osd_query("select {} from jobs where group_id='{}' and build='{}'".
+                                    format(JobSQL.FIELDS_ORDER, groupid, latest_build))
+            jobs = []
+            for raw_job in rezult:
+                jobs.append(JobSQL(raw_job))
+            for job in jobs:
+                if job.result == 'failed':
+                    bugrefs = self.get_bugrefs(job.id)
+                    formated_bugrefs = []
+                    for bug in bugrefs:
+                        rez = re.search('(poo|bsc)\#(\d+)', bug)
+                        if rez.group(1) == 'poo':
+                            formated_bugrefs.append(
+                                {'href': 'https://progress.opensuse.org/issues/{}'.format(rez.group(2)), 'name': bug})
+                        elif rez.group(1) == 'bsc':
+                            formated_bugrefs.append(
+                                {'href': 'https://bugzilla.suse.com/show_bug.cgi?id={}'.format(rez.group(2)), 'name': bug})
+                        else:
+                            formated_bugrefs.append({'href': '', 'name': bug})
+                    if len(formated_bugrefs):
+                        job.bugrefs = formated_bugrefs
                     else:
-                        formated_bugrefs.append({'href': '', 'name': bug})
-                job.bugrefs = formated_bugrefs
-            else:
-                job.bugrefs = ''
-        self.generate_report(jobs)
+                        job.bugrefs = ''
+                    failed_modules_rez = self.osd_query(
+                        "select name from job_modules where job_id={} and result='failed'".format(job.id))
+                    job.failed_modules = ''
+                    for mod_name in failed_modules_rez:
+                        job.failed_modules = "{},{}".format(mod_name[0], job.failed_modules)
+                else:
+                    job.bugrefs = ''
+            self.generate_report(jobs, groupid, latest_build)
 
 
 def main():

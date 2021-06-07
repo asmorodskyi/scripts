@@ -21,7 +21,6 @@
             <th>ID</th>
             <th>Name</th>
             <th>Flavor</th>
- {% if pc %}<th>Instance Type</th>{% endif %}
             <th>Result</th>
             <th>Failed Modules</th>
             <th>BugRefs</th>
@@ -31,7 +30,6 @@
             <td><a href="{{baseurl}}{{item.id}}">{{item.id}}</a></td>
             <td>{{item.name}}</td>
             <td>{{item.flavor}}</td>
- {% if pc %}<td>{{item.instance_type}}</td> {% endif %}
             <td>{{item.result}}</td>
             <td>{{item.failed_modules}}</td>
             <td>{% if item.bugrefs %}

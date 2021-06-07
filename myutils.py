@@ -12,7 +12,7 @@ import json
 from git import Repo
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Base, JobORM, MessageLatency
+from models import Base, MessageLatency
 import configparser
 from datetime import datetime
 import psycopg2
@@ -139,9 +139,7 @@ class openQAHelper(TaskHelper):
             Base.metadata.create_all(engine, Base.metadata.tables.values(), checkfirst=True)
             Session = sessionmaker(bind=engine)
             self.session = Session()
-            self.job_query = self.session.query(JobORM)
             self.msg_query = self.session.query(MessageLatency)
-            self.logger.info("{} objects was in cache".format(self.job_query.count()))
 
     def get_previous_builds(self, job_group_id: int, deep: int = 3):
         builds = []
@@ -151,27 +149,6 @@ class openQAHelper(TaskHelper):
             for i in range(0, deep):
                 builds.append(group_json['build_results'][i + 1]['build'])
         return builds
-
-    def refresh_cache(self, groupid):
-        job_group_jobs = requests.get(
-            '{}job_groups/{}/jobs'.format(self.OPENQA_API_BASE, groupid), verify=False).json()
-        self.logger.info('Got {} jobs for {}'.format(
-            len(job_group_jobs['ids']), self.config.get(str(groupid), 'name', fallback=groupid)))
-        for groupid in job_group_jobs['ids']:
-            job_orm = self.job_query.get(groupid)
-            if job_orm:
-                if job_orm.needs_update:
-                    job_orm.update_from_json(requests.get(
-                        '{}jobs/{}/details'.format(self.OPENQA_API_BASE, groupid), verify=False).json())
-                    self.logger.debug('Updating {}'.format(job_orm))
-                    self.session.commit()
-            else:
-                job_orm = JobORM()
-                job_orm.update_from_json(requests.get(
-                    '{}jobs/{}/details'.format(self.OPENQA_API_BASE, groupid), verify=False).json())
-                self.logger.debug('Adding {}'.format(job_orm))
-                self.session.add(job_orm)
-                self.session.commit()
 
     def filter_latest(self, all_jobs):
         unique_jobs = {}

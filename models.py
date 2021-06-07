@@ -5,6 +5,21 @@ from datetime import datetime, timedelta
 
 Base = declarative_base()
 
+class JobSQL:
+
+    FIELDS_ORDER = 'id, test, result, state, flavor'
+
+    def __init__(self, raw_job):
+        self.id = raw_job[0]
+        self.name = raw_job[1]
+        self.result = raw_job[2]
+        self.state = raw_job[3]
+        self.flavor = raw_job[4]
+
+    def __str__(self):
+        pattern = 'Job(id: {}, name: {}, result: {}, state: {}, flavor: {})'
+        return pattern.format(self.id, self.name, self.result, self.state, self.flavor)
+
 
 class JobORM(Base):
     __tablename__ = "job"
