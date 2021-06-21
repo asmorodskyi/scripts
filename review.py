@@ -25,7 +25,7 @@ class Review(openQAHelper):
             self.logger.info('{} is latest build for {}'.format(
                 latest_build, self.config.get(str(groupid), 'name', fallback=groupid)))
             jobs = self.osd_get_jobs_where(
-                latest_build, groupid, " and result not in ('passed', 'skipped', 'parallel_failed')")
+                latest_build, groupid, " and result in ('softfailed', 'failed', 'timeout_exceeded', 'incomplete')")
             unique_jobs = self.filter_latest(jobs)
             for job in unique_jobs:
                 if self.apply_known:
