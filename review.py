@@ -7,17 +7,27 @@ import argparse
 import urllib3
 import json
 import webbrowser
-from models import JobSQL
+from models import JobSQL, Base, ReviewCache, KnownIssues
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+import re
+
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class Review(openQAHelper):
-    known_json = '/scripts/known.json'
 
-    def __init__(self, dry_run: bool = False):
+    def __init__(self, dry_run: bool = False, browser: bool = False):
         super(Review, self).__init__('review', False, load_cache=True)
         self.dry_run = dry_run
+        self.browser = browser
+        engine = create_engine('sqlite:////scripts/review.db')
+        Base.metadata.create_all(engine, Base.metadata.tables.values(), checkfirst=True)
+        Session = sessionmaker(bind=engine)
+        self.session = Session()
+        self.reviewcache_query = self.session.query(ReviewCache)
+        self.known_issues_query = self.session.query(KnownIssues)
 
     def run(self):
         for groupid in self.my_osd_groups:
@@ -44,9 +54,13 @@ class Review(openQAHelper):
                         self.logger.info(
                             '{} on {} {}t{} [{}]'.format(job.name, job.flavor, self.OPENQA_URL_BASE, job.id,
                                                          failed_modules))
-                        webbrowser.open("{}t{}".format(self.OPENQA_URL_BASE, job.id))
-                    for ref in bugrefs:
-                        self.add_comment(job, ref)
+                        if self.browser:
+                            webbrowser.open("{}t{}".format(self.OPENQA_URL_BASE, job.id))
+                        self.session.add(ReviewCache(job.name, failed_modules))
+                        self.session.commit()
+                    else:
+                        for ref in bugrefs:
+                            self.add_comment(job, ref)
 
     def add_comment(self, job, comment):
         self.logger.info('Add a comment to {} with reference {}'.format(job, comment))
@@ -69,24 +83,45 @@ class Review(openQAHelper):
         return failed_modules
 
     def apply_known_refs(self, job):
-        with open(Review.known_json) as f:
-            known = json.load(f)
-            failed_modules = self.get_failed_modules(job.id)
-            comment_applied = False
-            for item in known:
-                if item['test'] == job.name and failed_modules == item["failed_modules"]:
-                    self.add_comment(job, item['label'])
-                    comment_applied = True
-            return comment_applied
+        failed_modules = self.get_failed_modules(job.id)
+        comment_applied = False
+        for item in self.known_issues_query.filter(KnownIssues.job_name == job.name).filter(KnownIssues.failed_modules == failed_modules):
+            self.add_comment(job, item.label)
+            comment_applied = True
+        return comment_applied
+
+    def clean_cache(self):
+        self.session.query(ReviewCache).delete()
+
+    def move_cache(self, query):
+        m = re.match(r"([fn]=[a-z_,]*)\|([a-z#0-9]*)", query)
+        if m:
+            cache_filter = m.group(1).split('=')
+            if cache_filter[0] == 'f':
+                for review in self.reviewcache_query.filter(ReviewCache.failed_modules == cache_filter[1]).all():
+                    self.logger.info("Moving {} to known_issues with label={}".format(review, m.group(2)))
+                    self.session.add(KnownIssues(review.job_name, review.failed_modules, m.group(2)))
+                    self.reviewcache_query.filter(ReviewCache.id == review.id).delete()
+                self.session.commit()
+        else:
+            raise ValueError("Unkown key")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--dry_run', action='store_true')
+    parser.add_argument('-b', '--browser', action='store_true')
+    parser.add_argument('-c', '--cleancache', action='store_true')
+    parser.add_argument('-m', '--movecache')
     args = parser.parse_args()
 
-    review = Review(args.dry_run)
-    review.run()
+    review = Review(args.dry_run, args.browser)
+    if args.cleancache:
+        review.clean_cache()
+    if args.movecache:
+        review.move_cache(args.movecache)
+    else:
+        review.run()
 
 
 if __name__ == "__main__":

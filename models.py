@@ -50,5 +50,37 @@ class MessageLatency(Base):
         self.locked_till = self.locked_till + self.time_delta
 
 
+class ReviewCache(Base):
+
+    __tablename__ = "reviewcache"
+
+    def __init__(self, job_name, failed_modules):
+        self.job_name = job_name
+        self.failed_modules = failed_modules
+
+    id = Column(Integer, primary_key=True)
+    job_name = Column(String)
+    failed_modules = Column(String)
+
+    def __str__(self):
+        return 'ReviewCache(job_name: {}, failed_modules: {})'.format(self.job_name, self.failed_modules)
+
+class KnownIssues(Base):
+
+    __tablename__ = "knownissues"
+
+    def __init__(self, job_name, failed_modules, label):
+        self.job_name = job_name
+        self.failed_modules = failed_modules
+        self.label = label
+
+    id = Column(Integer, primary_key=True)
+    job_name = Column(String)
+    failed_modules = Column(String)
+    label = Column(String)
+
+
+
+
 
 
