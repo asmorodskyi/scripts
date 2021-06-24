@@ -30,7 +30,7 @@ class Review(openQAHelper):
             unique_jobs = self.filter_latest(jobs)
             for job in unique_jobs:
                 existing_bugrefs = self.get_bugrefs(job.id)
-                if len(existing_bugrefs) == 0 and not self.apply_known_refs(job):
+                if len(existing_bugrefs) == 0 and not self.apply_known_refs(job) and previous_builds:
                     bugrefs = set()
                     previous_jobs = self.osd_query("{} build in ({}) and test='{}' and flavor='{}' and group_id={} and result in ('failed', 'timeout_exceeded', 'incomplete')".format(
                         JobSQL.SELECT_QUERY, previous_builds, job.name, job.flavor, groupid))
@@ -39,7 +39,7 @@ class Review(openQAHelper):
                         previous_job_sql = JobSQL(previous_job)
                         previous_job_failed_modules = self.get_failed_modules(previous_job_sql.id)
                         if previous_job_failed_modules == failed_modules:
-                            bugrefs = bugrefs | self.get_bugrefs(previous_job.id)
+                            bugrefs = bugrefs | self.get_bugrefs(previous_job_sql.id)
                     if len(bugrefs) == 0:
                         self.logger.info(
                             '{} on {} {}t{} [{}]'.format(job.name, job.flavor, self.OPENQA_URL_BASE, job.id,
