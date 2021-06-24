@@ -6,6 +6,7 @@ from myutils import openQAHelper
 import argparse
 import urllib3
 import json
+from models import JobSQL
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -13,10 +14,9 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 class Review(openQAHelper):
     known_json = '/scripts/known.json'
 
-    def __init__(self, dry_run: bool = False, apply_known: bool = False):
+    def __init__(self, dry_run: bool = False):
         super(Review, self).__init__('review', False, load_cache=True)
         self.dry_run = dry_run
-        self.apply_known = apply_known
 
     def run(self):
         for groupid in self.my_osd_groups:
@@ -25,24 +25,24 @@ class Review(openQAHelper):
             self.logger.info('{} is latest build for {}'.format(
                 latest_build, self.config.get(str(groupid), 'name', fallback=groupid)))
             jobs = self.osd_get_jobs_where(
-                latest_build, groupid, " and result in ('softfailed', 'failed', 'timeout_exceeded', 'incomplete')")
+                latest_build, groupid, " and result in ('failed', 'timeout_exceeded', 'incomplete')")
             unique_jobs = self.filter_latest(jobs)
             for job in unique_jobs:
-                if self.apply_known:
-                    self.apply_known_refs(job)
-                need_review_bugrefs = self.get_bugrefs(job.id)
-                if len(need_review_bugrefs) == 0:
+                existing_bugrefs = self.get_bugrefs(job.id)
+                if len(existing_bugrefs) == 0 and not self.apply_known_refs(job):
                     bugrefs = set()
-                    jobs =
-                    for previous_job in self.job_query.filter(JobORM.build.in_(previous_builds)).\
-                            filter(JobORM.name == job.name).filter(JobORM.instance_type == job.instance_type).\
-                            filter(JobORM.flavor == job.flavor).filter(JobORM.failed_modules == job.failed_modules).\
-                            filter(JobORM.result == 'failed').filter(JobORM.groupid == groupid).all():
-                        bugrefs = bugrefs | self.get_bugrefs(previous_job.id)
+                    previous_jobs = self.osd_query("{} build in ({}) and test='{}' and flavor='{}' and group_id={} and result in ('failed', 'timeout_exceeded', 'incomplete')".format(
+                        JobSQL.SELECT_QUERY, previous_builds, job.name, job.flavor, groupid))
+                    failed_modules = self.get_failed_modules(job.id)
+                    for previous_job in previous_jobs:
+                        previous_job_sql = JobSQL(previous_job)
+                        previous_job_failed_modules = self.get_failed_modules(previous_job_sql.id)
+                        if previous_job_failed_modules == failed_modules:
+                            bugrefs = bugrefs | self.get_bugrefs(previous_job.id)
                     if len(bugrefs) == 0:
                         self.logger.info(
                             '{} on {} {}t{} [{}]'.format(job.name, job.flavor, self.OPENQA_URL_BASE, job.id,
-                                                         job.failed_modules))
+                                                         failed_modules))
                     for ref in bugrefs:
                         self.add_comment(job, ref)
 
@@ -54,25 +54,36 @@ class Review(openQAHelper):
             self.logger.info('"{}" not executed due to dry_run=True'.format(cmd))
         else:
             self.shell_exec(cmd, log=True)
-            job.needs_update = False
-            self.session.commit()
+
+    def get_failed_modules(self, job_id):
+        rezult = self.osd_query(
+            "select name from job_modules where job_id={} and result='failed'".format(job_id))
+        failed_modules = ""
+        for rez in rezult:
+            if not failed_modules:
+                failed_modules = "{}".format(rez[0])
+            else:
+                failed_modules = "{},{}".format(failed_modules, rez[0])
+        return failed_modules
 
     def apply_known_refs(self, job):
         with open(Review.known_json) as f:
             known = json.load(f)
+            failed_modules = self.get_failed_modules(job.id)
+            comment_applied = False
             for item in known:
-                if item['test'] == job.name and item['failed_modules'] in job.failed_modules and len(
-                        self.get_bugrefs(job.id)) == 0:
+                if item['test'] == job.name and failed_modules == item["failed_modules"]:
                     self.add_comment(job, item['label'])
+                    comment_applied = True
+            return comment_applied
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--dry_run', action='store_true')
-    parser.add_argument('-a', '--apply_known', action='store_true')
     args = parser.parse_args()
 
-    review = Review(args.dry_run, args.apply_known)
+    review = Review(args.dry_run)
     review.run()
 
 
