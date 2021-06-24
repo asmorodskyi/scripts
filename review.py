@@ -6,6 +6,7 @@ from myutils import openQAHelper
 import argparse
 import urllib3
 import json
+import webbrowser
 from models import JobSQL
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -43,6 +44,7 @@ class Review(openQAHelper):
                         self.logger.info(
                             '{} on {} {}t{} [{}]'.format(job.name, job.flavor, self.OPENQA_URL_BASE, job.id,
                                                          failed_modules))
+                        webbrowser.open("{}t{}".format(self.OPENQA_URL_BASE, job.id))
                     for ref in bugrefs:
                         self.add_comment(job, ref)
 
