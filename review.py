@@ -18,6 +18,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Review(openQAHelper):
 
+    SQL_WHERE_RESULTS = " and result in ('failed', 'timeout_exceeded', 'incomplete')"
+
     def __init__(self, dry_run: bool = False, browser: bool = False):
         super(Review, self).__init__('review', False, load_cache=True)
         self.dry_run = dry_run
@@ -36,15 +38,14 @@ class Review(openQAHelper):
             previous_builds = self.get_previous_builds(groupid)
             self.logger.info('{} is latest build for {}'.format(
                 latest_build, self.config.get(str(groupid), 'name', fallback=groupid)))
-            jobs = self.osd_get_jobs_where(
-                latest_build, groupid, " and result in ('failed', 'timeout_exceeded', 'incomplete')")
-            unique_jobs = self.filter_latest(jobs)
-            for job in unique_jobs:
+            jobs_to_review = self.filter_latest(self.osd_get_jobs_where(
+                latest_build, groupid, Review.SQL_WHERE_RESULTS))
+            for job in jobs_to_review:
                 existing_bugrefs = self.get_bugrefs(job.id)
                 if len(existing_bugrefs) == 0 and not self.apply_known_refs(job) and previous_builds:
                     bugrefs = set()
-                    previous_jobs = self.osd_query("{} build in ({}) and test='{}' and flavor='{}' and group_id={} and result in ('failed', 'timeout_exceeded', 'incomplete')".format(
-                        JobSQL.SELECT_QUERY, previous_builds, job.name, job.flavor, groupid))
+                    previous_jobs = self.osd_query("{} build in ({}) and test='{}' and flavor='{}' and group_id={} {}".format(
+                        JobSQL.SELECT_QUERY, previous_builds, job.name, job.flavor, groupid, Review.SQL_WHERE_RESULTS))
                     failed_modules = self.get_failed_modules(job.id)
                     for previous_job in previous_jobs:
                         previous_job_sql = JobSQL(previous_job)
