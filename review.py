@@ -22,6 +22,7 @@ class Review(openQAHelper):
         super(Review, self).__init__('review', False, load_cache=True)
         self.dry_run = dry_run
         self.browser = browser
+        self.tabs_to_open = []
         engine = create_engine('sqlite:////scripts/review.db')
         Base.metadata.create_all(engine, Base.metadata.tables.values(), checkfirst=True)
         Session = sessionmaker(bind=engine)
@@ -55,21 +56,26 @@ class Review(openQAHelper):
                             '{} on {} {}t{} [{}]'.format(job.name, job.flavor, self.OPENQA_URL_BASE, job.id,
                                                          failed_modules))
                         if self.browser:
-                            webbrowser.open("{}t{}".format(self.OPENQA_URL_BASE, job.id))
+                            self.tabs_to_open.append("{}t{}".format(self.OPENQA_URL_BASE, job.id))
                         self.session.add(ReviewCache(job.name, failed_modules))
                         self.session.commit()
                     else:
                         for ref in bugrefs:
                             self.add_comment(job, ref)
+        input("Hit enter to see all tabs")
+        if self.tabs_to_open:
+            for tab in self.tabs_to_open:
+                webbrowser.open(tab)
 
     def add_comment(self, job, comment):
-        self.logger.info('Add a comment to {} with reference {}'.format(job, comment))
+        self.logger.debug('Add a comment to {} with reference {}. {}t{}'.format(
+            job, comment, self.OPENQA_URL_BASE, job.id))
         cmd = 'openqa-cli api --host {} -X POST jobs/{}/comments text=\'{}\''.format(self.OPENQA_URL_BASE, job.id,
                                                                                      comment)
         if self.dry_run:
             self.logger.info('"{}" not executed due to dry_run=True'.format(cmd))
         else:
-            self.shell_exec(cmd, log=True)
+            self.shell_exec(cmd)
 
     def get_failed_modules(self, job_id):
         rezult = self.osd_query(
@@ -99,8 +105,9 @@ class Review(openQAHelper):
             cache_filter = m.group(1).split('=')
             if cache_filter[0] == 'f':
                 for review in self.reviewcache_query.filter(ReviewCache.failed_modules == cache_filter[1]).all():
-                    self.logger.info("Moving {} to known_issues with label={}".format(review, m.group(2)))
-                    self.session.add(KnownIssues(review.job_name, review.failed_modules, m.group(2)))
+                    if not self.known_issues_query.filter(KnownIssues.job_name == review.job_name).filter(KnownIssues.failed_modules == review.failed_modules).filter(KnownIssues.label == m.group(2)).one_or_none():
+                        self.logger.info("Moving {} to known_issues with label={}".format(review, m.group(2)))
+                        self.session.add(KnownIssues(review.job_name, review.failed_modules, m.group(2)))
                     self.reviewcache_query.filter(ReviewCache.id == review.id).delete()
                 self.session.commit()
         else:
