@@ -82,6 +82,7 @@ class Review(openQAHelper):
         rezult = self.osd_query(
             "select name from job_modules where job_id={} and result='failed'".format(job_id))
         failed_modules = ""
+        rezult.sort()
         for rez in rezult:
             if not failed_modules:
                 failed_modules = "{}".format(rez[0])
@@ -141,7 +142,7 @@ def main():
     review = Review(args.dry_run, args.browser)
     if args.cleancache:
         review.clean_cache()
-    if args.movecache:
+    elif args.movecache:
         review.move_cache(args.movecache)
     else:
         review.run()
