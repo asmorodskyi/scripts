@@ -104,15 +104,30 @@ class Review(openQAHelper):
         m = re.match(r"([fn]=[a-z_,]*)\|([a-z#0-9]*)", query)
         if m:
             cache_filter = m.group(1).split('=')
+            label = m.group(2)
             if cache_filter[0] == 'f':
                 for review in self.reviewcache_query.filter(ReviewCache.failed_modules == cache_filter[1]).all():
-                    if not self.known_issues_query.filter(KnownIssues.job_name == review.job_name).filter(KnownIssues.failed_modules == review.failed_modules).filter(KnownIssues.label == m.group(2)).one_or_none():
-                        self.logger.info("Moving {} to known_issues with label={}".format(review, m.group(2)))
-                        self.session.add(KnownIssues(review.job_name, review.failed_modules, m.group(2)))
+                    if not self.knownissue_exists(review.job_name, review.failed_modules, label):
+                        self.add_knownissue(review, label)
+                    self.reviewcache_query.filter(ReviewCache.id == review.id).delete()
+                self.session.commit()
+            elif cache_filter[0] == 'n':
+                for review in self.reviewcache_query.filter(ReviewCache.job_name == cache_filter[1]).all():
+                    if not self.knownissue_exists(review.job_name, review.failed_modules, label):
+                        self.add_knownissue(review, label)
                     self.reviewcache_query.filter(ReviewCache.id == review.id).delete()
                 self.session.commit()
         else:
             raise ValueError("Unkown key")
+
+    def knownissue_exists(self, job_name, failed_modules, label):
+        rez = self.known_issues_query.filter(KnownIssues.job_name == job_name).filter(
+            KnownIssues.failed_modules == failed_modules).filter(KnownIssues.label == label).one_or_none()
+        return bool(rez)
+
+    def add_knownissue(self, review, label):
+        self.logger.info("Moving {} to known_issues with label={}".format(review, label))
+        self.session.add(KnownIssues(review.job_name, review.failed_modules, label))
 
 
 def main():
