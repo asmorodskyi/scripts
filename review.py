@@ -36,8 +36,7 @@ class Review(openQAHelper):
         for groupid in self.my_osd_groups:
             latest_build = self.get_latest_build(groupid)
             previous_builds = self.get_previous_builds(groupid)
-            self.logger.info('{} is latest build for {}'.format(
-                latest_build, self.config.get(str(groupid), 'name', fallback=groupid)))
+            self.logger.info('{} is latest build for {}'.format(latest_build, self.get_group_name(groupid)))
             jobs_to_review = self.filter_latest(self.osd_get_jobs_where(
                 latest_build, groupid, Review.SQL_WHERE_RESULTS))
             for job in jobs_to_review:
@@ -63,8 +62,8 @@ class Review(openQAHelper):
                     else:
                         for ref in bugrefs:
                             self.add_comment(job, ref)
-        input("Hit enter to see all tabs")
         if self.tabs_to_open:
+            input("Hit enter to see all tabs")
             for tab in self.tabs_to_open:
                 webbrowser.open(tab)
 
@@ -74,7 +73,7 @@ class Review(openQAHelper):
         cmd = 'openqa-cli api --host {} -X POST jobs/{}/comments text=\'{}\''.format(self.OPENQA_URL_BASE, job.id,
                                                                                      comment)
         if self.dry_run:
-            self.logger.info('"{}" not executed due to dry_run=True'.format(cmd))
+            self.logger.debug('"{}" not executed due to dry_run=True'.format(cmd))
         else:
             self.shell_exec(cmd)
 
@@ -94,7 +93,10 @@ class Review(openQAHelper):
         failed_modules = self.get_failed_modules(job.id)
         comment_applied = False
         for item in self.known_issues_query.filter(KnownIssues.job_name == job.name).filter(KnownIssues.failed_modules == failed_modules):
-            self.add_comment(job, item.label)
+            if item.label == 'skip':
+                self.logger.debug("Ignoring {} due to skip instruction in known issues".format(job))
+            else:
+                self.add_comment(job, item.label)
             comment_applied = True
         return comment_applied
 
@@ -129,6 +131,16 @@ class Review(openQAHelper):
     def add_knownissue(self, review, label):
         self.logger.info("Moving {} to known_issues with label={}".format(review, label))
         self.session.add(KnownIssues(review.job_name, review.failed_modules, label))
+
+    def grep_job_failures(self, jobid):
+        all_errors = []
+        job_json = requests.get('{}api/v1/jobs/{}/details'.format(self.OPENQA_URL_BASE, jobid), verify=False).json()
+        for rez in job_json['job']['testresults']:
+            if rez['result'] == 'failed':
+                for frame in rez['details']:
+                    if frame['result'] == 'fail':
+                        all_errors.append(frame['text_data'].split('\n')[0])
+        return all_errors
 
 
 def main():

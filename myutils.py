@@ -156,6 +156,11 @@ class openQAHelper(TaskHelper):
                     builds = "{},'{}'".format(builds, group_json['build_results'][i + 1]['build'])
         return builds
 
+    def get_group_name(self, job_group_id: int):
+        group_json = requests.get('{}group_overview/{}.json'.format(self.OPENQA_URL_BASE, job_group_id),
+                                  verify=False).json()
+        return group_json['group']['name']
+
     def filter_latest(self, all_jobs):
         unique_jobs = {}
         for job in all_jobs:

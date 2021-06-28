@@ -62,8 +62,7 @@ class openQABot(openQAHelper):
             subj_text = 'openSUSE.ORG - '
         else:
             subj_text = 'SUSE.DE - '
-        subj_text += "{}-{}-{}".format(msg['TEST'], msg['ARCH'],
-                                       self.config.get(str(msg['group_id']), 'name', fallback=msg['group_id']))
+        subj_text += "{}-{}-{}".format(msg['TEST'], msg['ARCH'], self.get_group_name(msg['group_id']))
         job_url = '{}t{}'.format(self.OPENQA_URL_BASE, msg['id'])
         hdd = 'None'
         if 'HDD_1' in msg:

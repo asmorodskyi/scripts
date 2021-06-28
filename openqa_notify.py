@@ -72,7 +72,7 @@ class openQANotify(openQAHelper):
                 time.sleep(5)
 
     def generate_report(self, jobs, group_id, build):
-        group_name = self.config.get(str(group_id), 'name', fallback=group_id)
+        group_name = self.get_group_name(group_id)
         txt_report = self.notify_template_txt.render(items=jobs, build=build, group=group_name)
         html_report = self.notify_template_html.render(
             items=jobs, build=build, group=group_name, baseurl=self.OPENQA_URL_BASE + "t")
@@ -85,16 +85,15 @@ class openQANotify(openQAHelper):
             "select count(*) from jobs where group_id='{}' and build='{}' and state not in ('done','cancelled')".
             format(groupid, latest_build))
         if rezult[0][0] > 0:
-            self.logger.info("Some jobs are still not done in {} group for {} build".format(
-                self.config.get(str(groupid), 'name', fallback=groupid), latest_build))
+            self.logger.info("Some jobs are still not done in {} group for {} build".format(self.get_group_name(groupid))
         else:
-            jobs = self.osd_get_jobs_where(latest_build, groupid)
+            jobs=self.osd_get_jobs_where(latest_build, groupid)
             for job in jobs:
                 if job.result == 'failed':
-                    bugrefs = self.get_bugrefs(job.id)
-                    formated_bugrefs = []
+                    bugrefs=self.get_bugrefs(job.id)
+                    formated_bugrefs=[]
                     for bug in bugrefs:
-                        rez = re.search('(poo|bsc)\#(\d+)', bug)
+                        rez=re.search('(poo|bsc)\#(\d+)', bug)
                         if rez.group(1) == 'poo':
                             formated_bugrefs.append(
                                 {'href': 'https://progress.opensuse.org/issues/{}'.format(rez.group(2)), 'name': bug})
@@ -104,25 +103,25 @@ class openQANotify(openQAHelper):
                         else:
                             formated_bugrefs.append({'href': '', 'name': bug})
                     if len(formated_bugrefs):
-                        job.bugrefs = formated_bugrefs
+                        job.bugrefs=formated_bugrefs
                     else:
-                        job.bugrefs = ''
-                    failed_modules_rez = self.osd_query(
+                        job.bugrefs=''
+                    failed_modules_rez=self.osd_query(
                         "select name from job_modules where job_id={} and result='failed'".format(job.id))
-                    job.failed_modules = ''
+                    job.failed_modules=''
                     for mod_name in failed_modules_rez:
-                        job.failed_modules = "{},{}".format(mod_name[0], job.failed_modules)
+                        job.failed_modules="{},{}".format(mod_name[0], job.failed_modules)
                 else:
-                    job.bugrefs = ''
+                    job.bugrefs=''
             self.generate_report(jobs, groupid, latest_build)
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser=argparse.ArgumentParser()
     parser.add_argument('--generate_report', action='store_true')
-    args = parser.parse_args()
+    args=parser.parse_args()
     global notifier
-    notifier = openQANotify()
+    notifier=openQANotify()
     if args.generate_report:
         for group in notifier.my_osd_groups:
             notifier.handle_job_done(group)
