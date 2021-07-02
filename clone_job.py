@@ -39,8 +39,7 @@ class SmartClone(openQAHelper):
             m = re.match(r"(\w+)=(\w+)", query)
             groupid = m.group(2)
             latest_build = self.get_latest_build(groupid)
-            jobs = self.osd_get_jobs_where(latest_build, groupid, " and test != 'publiccloud_upload_img'")
-            unique_jobs = self.filter_latest(jobs)
+            unique_jobs = self.osd_get_jobs_where(latest_build, groupid, " and test != 'publiccloud_upload_img'")
             for job in unique_jobs:
                 self.shell_exec('{} {} {}'.format(self.cmd, job.id, self.params_str), log=True)
         else:

@@ -100,6 +100,7 @@ class TaskHelper:
                 connection = psycopg2.connect(user=self.osd_username, password=self.osd_password,
                                               host=self.osd_host, port="5432", database="openqa")
                 cursor = connection.cursor()
+                # self.logger.debug(query)
                 cursor.execute(query)
                 return cursor.fetchall()
             except (Exception, psycopg2.Error) as error:
@@ -161,17 +162,6 @@ class openQAHelper(TaskHelper):
                                   verify=False).json()
         return group_json['group']['name']
 
-    def filter_latest(self, all_jobs):
-        unique_jobs = {}
-        for job in all_jobs:
-            job_key = '{}-{}'.format(job.name, job.flavor)
-            if job_key in unique_jobs:
-                if job.id > unique_jobs[job_key].id:
-                    unique_jobs[job_key] = job
-            else:
-                unique_jobs[job_key] = job
-        return unique_jobs.values()
-
     def get_bugrefs(self, job_id):
         bugrefs = set()
         comments = requests.get('{}jobs/{}/comments'.format(self.OPENQA_API_BASE, job_id), verify=False).json()
@@ -205,9 +195,14 @@ class openQAHelper(TaskHelper):
     def osd_get_jobs_where(self, build, group_id, extra_conditions=''):
         rezult = self.osd_query("{} build='{}' and group_id='{}' {}".format(
             JobSQL.SELECT_QUERY, build, group_id, extra_conditions))
+        find_latest = "select max(id) from jobs where  build='{}' and group_id='{}'  and test='{}' and arch='{}' \
+            and flavor='{}';"
         jobs = []
         for raw_job in rezult:
-            jobs.append(JobSQL(raw_job))
+            sql_job = JobSQL(raw_job)
+            rez = self.osd_query(find_latest.format(build, group_id, sql_job.name, sql_job.arch, sql_job.flavor))
+            if rez[0][0] == sql_job.id:
+                jobs.append(sql_job)
         return jobs
 
 

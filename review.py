@@ -11,6 +11,7 @@ from models import JobSQL, Base, ReviewCache, KnownIssues
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import re
+import time
 
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -37,8 +38,7 @@ class Review(openQAHelper):
             latest_build = self.get_latest_build(groupid)
             previous_builds = self.get_previous_builds(groupid)
             self.logger.info('{} is latest build for {}'.format(latest_build, self.get_group_name(groupid)))
-            jobs_to_review = self.filter_latest(self.osd_get_jobs_where(
-                latest_build, groupid, Review.SQL_WHERE_RESULTS))
+            jobs_to_review = self.osd_get_jobs_where(latest_build, groupid, Review.SQL_WHERE_RESULTS)
             for job in jobs_to_review:
                 existing_bugrefs = self.get_bugrefs(job.id)
                 if len(existing_bugrefs) == 0 and not self.apply_known_refs(job) and previous_builds:
@@ -65,6 +65,7 @@ class Review(openQAHelper):
         if self.tabs_to_open:
             input("Hit enter to see all tabs")
             for tab in self.tabs_to_open:
+                time.sleep(2)
                 webbrowser.open(tab)
 
     def add_comment(self, job, comment):
@@ -87,7 +88,10 @@ class Review(openQAHelper):
                 failed_modules = "{}".format(rez[0])
             else:
                 failed_modules = "{},{}".format(failed_modules, rez[0])
-        return failed_modules
+        if failed_modules:
+            return failed_modules
+        else:
+            return "NULL"
 
     def apply_known_refs(self, job):
         failed_modules = self.get_failed_modules(job.id)
