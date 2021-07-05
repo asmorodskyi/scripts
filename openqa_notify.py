@@ -86,7 +86,7 @@ class openQANotify(openQAHelper):
             format(groupid, latest_build))
         if rezult[0][0] > 0:
             self.logger.info("Some jobs are still not done in {} group for {} build".format(
-                self.get_group_name(groupid)))
+                self.get_group_name(groupid), latest_build))
         else:
             jobs = self.osd_get_jobs_where(latest_build, groupid)
             for job in jobs:
