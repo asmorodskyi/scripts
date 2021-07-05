@@ -128,11 +128,17 @@ class GitHelper(TaskHelper):
 
 class openQAHelper(TaskHelper):
 
-    def __init__(self, name, for_o3, load_cache=False):
+    def __init__(self, name, for_o3, load_cache: bool = False, aliasgroups: str = None):
         super(openQAHelper, self).__init__(name)
         self.for_o3 = for_o3
+        if aliasgroups:
+            groups_section = 'ALIAS'
+            var_name = aliasgroups
+        else:
+            groups_section = 'DEFAULT'
+            var_name = 'groups'
         self.my_osd_groups = [int(num_str) for num_str in str(self.config.get(
-            'DEFAULT', 'groups', fallback='262,219,274,275')).split(',')]
+            groups_section, var_name, fallback='262,219,274,275')).split(',')]
         if self.for_o3:
             self.OPENQA_URL_BASE = 'https://openqa.opensuse.org/'
         else:

@@ -21,8 +21,8 @@ class Review(openQAHelper):
 
     SQL_WHERE_RESULTS = " and result in ('failed', 'timeout_exceeded', 'incomplete')"
 
-    def __init__(self, dry_run: bool = False, browser: bool = False):
-        super(Review, self).__init__('review', False, load_cache=True)
+    def __init__(self, dry_run: bool = False, browser: bool = False, aliasgroups: str = None):
+        super(Review, self).__init__('review', False, load_cache=True, aliasgroups=aliasgroups)
         self.dry_run = dry_run
         self.browser = browser
         self.tabs_to_open = []
@@ -153,9 +153,10 @@ def main():
     parser.add_argument('-b', '--browser', action='store_true')
     parser.add_argument('-c', '--cleancache', action='store_true')
     parser.add_argument('-m', '--movecache')
+    parser.add_argument('-a', '--aliasgroups')
     args = parser.parse_args()
 
-    review = Review(args.dry_run, args.browser)
+    review = Review(args.dry_run, args.browser, args.aliasgroups)
     if args.cleancache:
         review.clean_cache()
     elif args.movecache:
