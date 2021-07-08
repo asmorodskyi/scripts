@@ -80,6 +80,7 @@ class TaskHelper:
     def shell_exec(self, cmd, log=False, is_json=False, dryrun: bool = False):
         if dryrun:
             self.logger.info("NOT EXECUTING - {}".format(cmd))
+            return
         try:
             if log:
                 self.logger.info(cmd)
