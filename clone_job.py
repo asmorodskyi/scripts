@@ -26,22 +26,22 @@ class SmartClone(openQAHelper):
         else:
             self.cmd += ' --from {}'.format(args.frm)
 
-    def run(self, jobid):
+    def run(self, jobid, dryrun: bool = False):
         try:
             ids = jobid.split(',')
             for one_id in ids:
-                self.shell_exec('{} {} {}'.format(self.cmd, one_id, self.params_str), log=True)
+                self.shell_exec('{} {} {}'.format(self.cmd, one_id, self.params_str), log=True, dryrun=dryrun)
         except Exception:
             self.handle_error()
 
-    def query(self, query: str):
+    def query(self, query: str, dryrun: bool = False):
         if query.startswith('allpc'):
             m = re.match(r"(\w+)=(\w+)", query)
             groupid = m.group(2)
             latest_build = self.get_latest_build(groupid)
             unique_jobs = self.osd_get_jobs_where(latest_build, groupid, " and test != 'publiccloud_upload_img'")
             for job in unique_jobs:
-                self.shell_exec('{} {} {}'.format(self.cmd, job.id, self.params_str), log=True)
+                self.shell_exec('{} {} {}'.format(self.cmd, job.id, self.params_str), log=True, dryrun=dryrun)
         else:
             raise AttributeError('Unexpected query %s, excpected : allpc=<groupid>')
 
@@ -54,6 +54,7 @@ def main():
     parser.add_argument('-f', '--frm', default='openqa.suse.de')
     parser.add_argument('-p', '--params')
     parser.add_argument('-w', '--winst', action='store_true')
+    parser.add_argument('-d', '--dryrun', action='store_true')
     parser.add_argument('-b', '--branch')
     parser.add_argument('-r', '--resetworker', action='store_true')
     parser.add_argument('-g', '--github-user', default='asmorodskyi')
@@ -61,9 +62,9 @@ def main():
     args = parser.parse_args()
     solver = SmartClone(args)
     if args.query:
-        solver.query(args.query)
+        solver.query(args.query, args.dryrun)
     elif args.jobid:
-        solver.run(args.jobid)
+        solver.run(args.jobid, args.dryrun)
     else:
         raise AttributeError('Need to specify --jobid or --query')
 

@@ -73,10 +73,7 @@ class Review(openQAHelper):
             job, comment, self.OPENQA_URL_BASE, job.id))
         cmd = 'openqa-cli api --host {} -X POST jobs/{}/comments text=\'{}\''.format(self.OPENQA_URL_BASE, job.id,
                                                                                      comment)
-        if self.dry_run:
-            self.logger.debug('"{}" not executed due to dry_run=True'.format(cmd))
-        else:
-            self.shell_exec(cmd)
+        self.shell_exec(cmd, self.dry_run)
 
     def get_failed_modules(self, job_id):
         rezult = self.osd_query(

@@ -77,7 +77,9 @@ class TaskHelper:
         finally:
             return build
 
-    def shell_exec(self, cmd, log=False, is_json=False):
+    def shell_exec(self, cmd, log=False, is_json=False, dryrun: bool = False):
+        if dryrun:
+            self.logger.info("NOT EXECUTING - {}".format(cmd))
         try:
             if log:
                 self.logger.info(cmd)
