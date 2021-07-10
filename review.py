@@ -34,6 +34,7 @@ class Review(openQAHelper):
         self.known_issues_query = self.session.query(KnownIssues)
 
     def run(self):
+        self.session.query(ReviewCache).delete()
         for groupid in self.my_osd_groups:
             latest_build = self.get_latest_build(groupid)
             previous_builds = self.get_previous_builds(groupid)
@@ -101,9 +102,6 @@ class Review(openQAHelper):
             comment_applied = True
         return comment_applied
 
-    def clean_cache(self):
-        self.session.query(ReviewCache).delete()
-
     def move_cache(self, query):
         m = re.match(r"([fn]=[a-z_,]*)\|([a-z#0-9]*)", query)
         if m:
@@ -148,15 +146,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--dry_run', action='store_true')
     parser.add_argument('-b', '--browser', action='store_true')
-    parser.add_argument('-c', '--cleancache', action='store_true')
     parser.add_argument('-m', '--movecache')
     parser.add_argument('-a', '--aliasgroups')
     args = parser.parse_args()
 
     review = Review(args.dry_run, args.browser, args.aliasgroups)
-    if args.cleancache:
-        review.clean_cache()
-    elif args.movecache:
+    if args.movecache:
         review.move_cache(args.movecache)
     else:
         review.run()
