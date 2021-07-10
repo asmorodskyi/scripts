@@ -58,7 +58,8 @@ class Review(openQAHelper):
                                                          failed_modules))
                         if self.browser:
                             self.tabs_to_open.append("{}t{}".format(self.OPENQA_URL_BASE, job.id))
-                        self.session.add(ReviewCache(job.name, failed_modules))
+                        self.session.add(ReviewCache(job.name, failed_modules,
+                                                     job.result, self.grep_job_failures(job.id)))
                         self.session.commit()
                     else:
                         for ref in bugrefs:
@@ -93,8 +94,11 @@ class Review(openQAHelper):
 
     def apply_known_refs(self, job):
         failed_modules = self.get_failed_modules(job.id)
+        error_text = self.grep_job_failures(job.id)
         comment_applied = False
-        for item in self.known_issues_query.filter(KnownIssues.job_name == job.name).filter(KnownIssues.failed_modules == failed_modules):
+        for item in self.known_issues_query.filter(KnownIssues.job_name == job.name).\
+                filter(KnownIssues.failed_modules == failed_modules).filter(KnownIssues.errors_text == error_text).\
+                filter(KnownIssues.job_result == job.result):
             if item.label == 'skip':
                 self.logger.debug("Ignoring {} due to skip instruction in known issues".format(job))
             else:
@@ -109,27 +113,30 @@ class Review(openQAHelper):
             label = m.group(2)
             if cache_filter[0] == 'f':
                 for review in self.reviewcache_query.filter(ReviewCache.failed_modules == cache_filter[1]).all():
-                    if not self.knownissue_exists(review.job_name, review.failed_modules, label):
+                    if not self.knownissue_exists(review, label):
                         self.add_knownissue(review, label)
                     self.reviewcache_query.filter(ReviewCache.id == review.id).delete()
                 self.session.commit()
             elif cache_filter[0] == 'n':
                 for review in self.reviewcache_query.filter(ReviewCache.job_name == cache_filter[1]).all():
-                    if not self.knownissue_exists(review.job_name, review.failed_modules, label):
+                    if not self.knownissue_exists(review, label):
                         self.add_knownissue(review, label)
                     self.reviewcache_query.filter(ReviewCache.id == review.id).delete()
                 self.session.commit()
         else:
             raise ValueError("Unkown key")
 
-    def knownissue_exists(self, job_name, failed_modules, label):
-        rez = self.known_issues_query.filter(KnownIssues.job_name == job_name).filter(
-            KnownIssues.failed_modules == failed_modules).filter(KnownIssues.label == label).one_or_none()
+    def knownissue_exists(self, review, label):
+        rez = self.known_issues_query.filter(KnownIssues.job_name == review.job_name).\
+            filter(KnownIssues.failed_modules == review.failed_modules).\
+            filter(KnownIssues.label == label).filter(KnownIssues.job_result == review.job_result).\
+            filter(KnownIssues.errors_text == review.error_text).one_or_none()
         return bool(rez)
 
     def add_knownissue(self, review, label):
         self.logger.info("Moving {} to known_issues with label={}".format(review, label))
-        self.session.add(KnownIssues(review.job_name, review.failed_modules, label))
+        self.session.add(KnownIssues(review.job_name, review.job_result,
+                                     review.error_text, review.failed_modules, label))
 
     def grep_job_failures(self, jobid):
         all_errors = []
@@ -139,7 +146,8 @@ class Review(openQAHelper):
                 for frame in rez['details']:
                     if frame['result'] == 'fail':
                         all_errors.append(frame['text_data'].split('\n')[0])
-        return all_errors
+        all_errors.sort()
+        return ' '.join(all_errors)
 
 
 def main():

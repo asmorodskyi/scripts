@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, PickleType, DateTime, Interval
+from sqlalchemy import Column, Integer, String, Boolean, PickleType, DateTime, Interval, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import UniqueConstraint
 from datetime import datetime, timedelta
@@ -55,29 +55,38 @@ class ReviewCache(Base):
 
     __tablename__ = "reviewcache"
 
-    def __init__(self, job_name, failed_modules):
+    def __init__(self, job_name, failed_modules, job_result, errors_text):
         self.job_name = job_name
         self.failed_modules = failed_modules
+        self.job_result = job_result
+        self.errors_text = errors_text
 
     id = Column(Integer, primary_key=True)
     job_name = Column(String)
     failed_modules = Column(String)
+    job_result = Column(String)
+    errors_text = Column(Text)
 
     def __str__(self):
-        return 'ReviewCache(job_name: {}, failed_modules: {})'.format(self.job_name, self.failed_modules)
+        return 'ReviewCache(job_name: {}, job_result: {}, failed_modules: {})'\
+               .format(self.job_name, self.job_result, self.failed_modules)
 
 class KnownIssues(Base):
 
     __tablename__ = "knownissues"
 
-    def __init__(self, job_name, failed_modules, label):
+    def __init__(self, job_name, job_result, errors_text, failed_modules, label):
         self.job_name = job_name
         self.failed_modules = failed_modules
         self.label = label
+        self.job_result = job_result
+        self.errors_text = errors_text
 
     id = Column(Integer, primary_key=True)
     job_name = Column(String)
     failed_modules = Column(String)
+    job_result = Column(String)
+    errors_text = Column(Text)
     label = Column(String)
 
 
