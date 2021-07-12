@@ -15,6 +15,6 @@ if [ $CSP = "gce" ]; then
 elif [ $CSP = "azure" ]; then
   terraform plan -var 'name=openqa-suse-de' -var 'tags={"openqa_ttl":"7500"}' -var 'offer=sles-15-sp2-byos' -var 'type=Standard_B1ms' -out myplan
 elif [ $CSP = "ec2" ]; then
-  terraform plan -no-color -var "image_id=$IMAGE" -var 'instance_count=1' -var 'type=i3.metal' -var 'region=eu-west-1' -var 'name=openqa-suse-de' -var 'tags={"openqa_ttl":"8640300"}' -out myplan
+  terraform plan -no-color -var "image_id=$IMAGE" -var 'instance_count=1' -var 'type=t2.large' -var 'region=eu-west-1' -var 'name=openqa-suse-de' -var 'tags={"openqa_ttl":"8640300"}' -out myplan
 fi
 terraform apply "myplan"
