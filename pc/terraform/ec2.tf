@@ -21,19 +21,18 @@ variable "image_id" {
 resource "random_id" "service" {
     count = var.instance_count
     keepers = {
-        name = "test_destroy"
+        name = "asm"
     }
     byte_length = 8
 }
 
-resource "aws_key_pair" "openqa-keypair" {
-    key_name   = "openqa-${element(random_id.service.*.hex, 0)}"
+resource "aws_key_pair" "asm-keypair" {
+    key_name   = "asm-${element(random_id.service.*.hex, 0)}"
     public_key = file("/home/asmorodskyi/.ssh/id_rsa.pub")
 }
 
-resource "aws_security_group" "basic_sg" {
-    name        = "openqa-${element(random_id.service.*.hex, 0)}"
-    description = "Allow all inbound traffic from SUSE IP ranges"
+resource "aws_security_group" "asm_sg" {
+    name        = "asm-${element(random_id.service.*.hex, 0)}"
 
     ingress {
         from_port   = 0
@@ -55,12 +54,12 @@ resource "aws_security_group" "basic_sg" {
         }
 }
 
-resource "aws_instance" "openqa" {
+resource "aws_instance" "asm-test" {
     count           = var.instance_count
     ami             = var.image_id
     instance_type   = var.type
-    key_name        = aws_key_pair.openqa-keypair.key_name
-    security_groups = [aws_security_group.basic_sg.name]
+    key_name        = aws_key_pair.asm-keypair.key_name
+    security_groups = [aws_security_group.asm_sg.name]
 
     tags = {
             openqa_created_date = timestamp()
@@ -70,9 +69,9 @@ resource "aws_instance" "openqa" {
 }
 
 output "public_ip" {
-    value = aws_instance.openqa.*.public_ip
+    value = aws_instance.asm-test.*.public_ip
 }
 
 output "vm_name" {
-    value = aws_instance.openqa.*.id
+    value = aws_instance.asm-test.*.id
 }
