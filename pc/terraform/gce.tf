@@ -52,11 +52,6 @@ variable "uefi" {
     default=false
 }
 
-variable "tags" {
-    type = map(string)
-    default = {}
-}
-
 resource "random_id" "service" {
     count = var.instance_count
     keepers = {
@@ -78,12 +73,13 @@ resource "google_compute_instance" "openqa" {
         }
     }
 
-    metadata = merge({
+    metadata = {
             sshKeys = "susetest:${file("/home/asmorodskyi/.ssh/id_rsa.pub")}"
             openqa_created_by = var.name
             openqa_created_date = "${timestamp()}"
             openqa_created_id = "${element(random_id.service.*.hex, count.index)}"
-        }, var.tags)
+            openqa_ttl = "8640300"
+        }
 
     network_interface {
         network = "default"

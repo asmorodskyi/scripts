@@ -18,11 +18,6 @@ variable "image_id" {
     default = "ami-016e32e9cd1b095f4"
 }
 
-variable "tags" {
-    type = map(string)
-    default = {}
-}
-
 resource "random_id" "service" {
     count = var.instance_count
     keepers = {
@@ -54,10 +49,10 @@ resource "aws_security_group" "basic_sg" {
         cidr_blocks     = ["0.0.0.0/0"]
     }
 
-    tags = merge({
+    tags = {
             openqa_created_date = timestamp()
             openqa_created_id = element(random_id.service.*.hex, 0)
-        }, var.tags)
+        }
 }
 
 resource "aws_instance" "openqa" {
@@ -67,10 +62,11 @@ resource "aws_instance" "openqa" {
     key_name        = aws_key_pair.openqa-keypair.key_name
     security_groups = [aws_security_group.basic_sg.name]
 
-    tags = merge({
+    tags = {
             openqa_created_date = timestamp()
             openqa_created_id = element(random_id.service.*.hex, count.index)
-        }, var.tags)
+            openqa_ttl = "8640300"
+            }
 }
 
 output "public_ip" {
