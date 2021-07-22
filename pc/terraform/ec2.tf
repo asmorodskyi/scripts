@@ -18,18 +18,6 @@ variable "image_id" {
     default = "ami-016e32e9cd1b095f4"
 }
 
-variable "extra-disk-size" {
-    default = "1000"
-}
-
-variable "extra-disk-type" {
-    default = "gp2"
-}
-
-variable "create-extra-disk" {
-    default=false
-}
-
 variable "tags" {
     type = map(string)
     default = {}
@@ -79,24 +67,6 @@ resource "aws_instance" "openqa" {
     key_name        = aws_key_pair.openqa-keypair.key_name
     security_groups = [aws_security_group.basic_sg.name]
 
-    tags = merge({
-            openqa_created_date = timestamp()
-            openqa_created_id = element(random_id.service.*.hex, count.index)
-        }, var.tags)
-}
-
-resource "aws_volume_attachment" "ebs_att" {
-    count       =  var.create-extra-disk ? var.instance_count: 0
-    device_name = "/dev/sdb"
-    volume_id   = element(aws_ebs_volume.ssd_disk.*.id, count.index)
-    instance_id = element(aws_instance.openqa.*.id, count.index)
-}
-
-resource "aws_ebs_volume" "ssd_disk" {
-    count             = var.create-extra-disk ? var.instance_count : 0
-    availability_zone = element(aws_instance.openqa.*.availability_zone, count.index)
-    size              = var.extra-disk-size
-    type              = var.extra-disk-type
     tags = merge({
             openqa_created_date = timestamp()
             openqa_created_id = element(random_id.service.*.hex, count.index)
