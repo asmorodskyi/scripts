@@ -71,7 +71,3 @@ resource "aws_instance" "asm-test" {
 output "public_ip" {
     value = aws_instance.asm-test.*.public_ip
 }
-
-output "vm_name" {
-    value = aws_instance.asm-test.*.id
-}
