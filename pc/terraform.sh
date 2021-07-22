@@ -19,5 +19,5 @@ if [ $CSP = "gce" ]; then
 elif [ $CSP = "azure" ]; then
   $PODMAN_EXE apply -var 'name=openqa-suse-de' -var 'offer=sles-15-sp2-byos' -var 'type=Standard_B1ms' $COMMON_PARAMS
 elif [ $CSP = "ec2" ]; then
-  $PODMAN_EXE apply -var "image_id=$IMAGE" -var 'instance_count=1' -var 'type=t2.large' -var 'region=eu-west-1' -var 'name=openqa-suse-de'  $COMMON_PARAMS
+  $PODMAN_EXE apply -var "image_id=$IMAGE" -var 'instance_count=1' -var 'type=t2.large' -var 'region=eu-west-1' $COMMON_PARAMS
 fi

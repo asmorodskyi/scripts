@@ -177,7 +177,7 @@ resource "azurerm_virtual_machine" "openqa-vm" {
         disable_password_authentication = true
         ssh_keys {
             path     = "/home/azureuser/.ssh/authorized_keys"
-            key_data = file("/home/asmorodskyi/.ssh/id_rsa.pub")
+            key_data = file("~/.ssh/id_rsa.pub")
         }
     }
 

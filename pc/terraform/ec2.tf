@@ -1,18 +1,5 @@
-terraform {
-  required_providers {
-    aws = {
-      version = "= 3.49.0"
-      source = "hashicorp/aws"
-    }
-    random = {
-      version = "= 3.1.0"
-      source = "hashicorp/random"
-    }
-  }
-}
-
 variable "region" {
-    default = "eu-central-1"
+    default = "us-east-1"
 }
 
 provider "aws" {
@@ -23,16 +10,12 @@ variable "instance_count" {
     default = "1"
 }
 
-variable "name" {
-    default = "openqa-vm"
-}
-
 variable "type" {
     default = "t2.large"
 }
 
 variable "image_id" {
-    default = ""
+    default = "ami-016e32e9cd1b095f4"
 }
 
 variable "extra-disk-size" {
@@ -55,7 +38,7 @@ variable "tags" {
 resource "random_id" "service" {
     count = var.instance_count
     keepers = {
-        name = var.name
+        name = "test_destroy"
     }
     byte_length = 8
 }
@@ -84,7 +67,6 @@ resource "aws_security_group" "basic_sg" {
     }
 
     tags = merge({
-            openqa_created_by = var.name
             openqa_created_date = timestamp()
             openqa_created_id = element(random_id.service.*.hex, 0)
         }, var.tags)
@@ -98,7 +80,6 @@ resource "aws_instance" "openqa" {
     security_groups = [aws_security_group.basic_sg.name]
 
     tags = merge({
-            openqa_created_by = var.name
             openqa_created_date = timestamp()
             openqa_created_id = element(random_id.service.*.hex, count.index)
         }, var.tags)
@@ -117,7 +98,6 @@ resource "aws_ebs_volume" "ssd_disk" {
     size              = var.extra-disk-size
     type              = var.extra-disk-type
     tags = merge({
-            openqa_created_by = var.name
             openqa_created_date = timestamp()
             openqa_created_id = element(random_id.service.*.hex, count.index)
         }, var.tags)
