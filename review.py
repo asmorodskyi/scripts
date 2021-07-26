@@ -94,10 +94,10 @@ class Review(openQAHelper):
 
     def apply_known_refs(self, job):
         failed_modules = self.get_failed_modules(job.id)
-        error_text = self.grep_job_failures(job.id)
+        errors_text = self.grep_job_failures(job.id)
         comment_applied = False
         for item in self.known_issues_query.filter(KnownIssues.job_name == job.name).\
-                filter(KnownIssues.failed_modules == failed_modules).filter(KnownIssues.errors_text == error_text).\
+                filter(KnownIssues.failed_modules == failed_modules).filter(KnownIssues.errors_text == errors_text).\
                 filter(KnownIssues.job_result == job.result):
             if item.label == 'skip':
                 self.logger.debug("Ignoring {} due to skip instruction in known issues".format(job))
@@ -130,13 +130,13 @@ class Review(openQAHelper):
         rez = self.known_issues_query.filter(KnownIssues.job_name == review.job_name).\
             filter(KnownIssues.failed_modules == review.failed_modules).\
             filter(KnownIssues.label == label).filter(KnownIssues.job_result == review.job_result).\
-            filter(KnownIssues.errors_text == review.error_text).one_or_none()
+            filter(KnownIssues.errors_text == review.errors_text).one_or_none()
         return bool(rez)
 
     def add_knownissue(self, review, label):
         self.logger.info("Moving {} to known_issues with label={}".format(review, label))
         self.session.add(KnownIssues(review.job_name, review.job_result,
-                                     review.error_text, review.failed_modules, label))
+                                     review.errors_text, review.failed_modules, label))
 
     def grep_job_failures(self, jobid):
         all_errors = []
@@ -145,7 +145,8 @@ class Review(openQAHelper):
             if rez['result'] == 'failed':
                 for frame in rez['details']:
                     if frame['result'] == 'fail':
-                        all_errors.append(frame['text_data'].split('\n')[0])
+                        if 'text_data' in frame and 'wait_serial expected:' not in frame['text_data']:
+                            all_errors.append(frame['text_data'].split('\n')[0])
         all_errors.sort()
         return ' '.join(all_errors)
 
