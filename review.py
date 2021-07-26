@@ -42,16 +42,17 @@ class Review(openQAHelper):
             jobs_to_review = self.osd_get_jobs_where(latest_build, groupid, Review.SQL_WHERE_RESULTS)
             for job in jobs_to_review:
                 existing_bugrefs = self.get_bugrefs(job.id)
-                if len(existing_bugrefs) == 0 and not self.apply_known_refs(job) and previous_builds:
+                if len(existing_bugrefs) == 0 and not self.apply_known_refs(job):
                     bugrefs = set()
-                    previous_jobs = self.osd_query("{} build in ({}) and test='{}' and flavor='{}' and group_id={} {}".format(
-                        JobSQL.SELECT_QUERY, previous_builds, job.name, job.flavor, groupid, Review.SQL_WHERE_RESULTS))
-                    failed_modules = self.get_failed_modules(job.id)
-                    for previous_job in previous_jobs:
-                        previous_job_sql = JobSQL(previous_job)
-                        previous_job_failed_modules = self.get_failed_modules(previous_job_sql.id)
-                        if previous_job_failed_modules == failed_modules:
-                            bugrefs = bugrefs | self.get_bugrefs(previous_job_sql.id)
+                    if previous_builds:
+                        previous_jobs = self.osd_query("{} build in ({}) and test='{}' and flavor='{}' \
+                        and group_id={} {}".format(JobSQL.SELECT_QUERY, previous_builds, job.name, job.flavor, groupid, Review.SQL_WHERE_RESULTS))
+                        failed_modules = self.get_failed_modules(job.id)
+                        for previous_job in previous_jobs:
+                            previous_job_sql = JobSQL(previous_job)
+                            previous_job_failed_modules = self.get_failed_modules(previous_job_sql.id)
+                            if previous_job_failed_modules == failed_modules:
+                                bugrefs = bugrefs | self.get_bugrefs(previous_job_sql.id)
                     if len(bugrefs) == 0:
                         self.logger.info(
                             '{} on {} {}t{} [{}]'.format(job.name, job.flavor, self.OPENQA_URL_BASE, job.id,
