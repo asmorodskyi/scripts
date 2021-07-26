@@ -154,16 +154,19 @@ class openQAHelper(TaskHelper):
             self.session = Session()
             self.msg_query = self.session.query(MessageLatency)
 
-    def get_previous_builds(self, job_group_id: int, deep: int = 3):
+    def get_previous_builds(self, job_group_id: int):
         builds = ""
         group_json = requests.get('{}group_overview/{}.json'.format(self.OPENQA_URL_BASE, job_group_id),
                                   verify=False).json()
-        if len(group_json['build_results']) > deep:
-            for i in range(0, deep):
-                if not builds:
-                    builds = "'{}'".format(group_json['build_results'][i + 1]['build'])
-                else:
-                    builds = "{},'{}'".format(builds, group_json['build_results'][i + 1]['build'])
+        max_deep = len(group_json['build_results'])
+        # we need maximum 3 builds
+        for i in range(0, 3):
+            if (i + 1) >= max_deep:
+                break
+            if not builds:
+                builds = "'{}'".format(group_json['build_results'][i + 1]['build'])
+            else:
+                builds = "{},'{}'".format(builds, group_json['build_results'][i + 1]['build'])
         return builds
 
     def get_group_name(self, job_group_id: int):
