@@ -21,10 +21,9 @@ class Review(openQAHelper):
 
     SQL_WHERE_RESULTS = " and result in ('failed', 'timeout_exceeded', 'incomplete')"
 
-    def __init__(self, dry_run: bool = False, browser: bool = False, aliasgroups: str = None):
+    def __init__(self, dry_run: bool = False, aliasgroups: str = None):
         super(Review, self).__init__('review', False, load_cache=True, aliasgroups=aliasgroups)
         self.dry_run = dry_run
-        self.browser = browser
         self.tabs_to_open = []
         engine = create_engine('sqlite:////scripts/review.db')
         Base.metadata.create_all(engine, Base.metadata.tables.values(), checkfirst=True)
@@ -57,8 +56,7 @@ class Review(openQAHelper):
                         self.logger.info(
                             '{} on {} {}t{} [{}]'.format(job.name, job.flavor, self.OPENQA_URL_BASE, job.id,
                                                          failed_modules))
-                        if self.browser:
-                            self.tabs_to_open.append("{}t{}".format(self.OPENQA_URL_BASE, job.id))
+                        self.tabs_to_open.append("{}t{}".format(self.OPENQA_URL_BASE, job.id))
                         self.session.add(ReviewCache(job.name, failed_modules,
                                                      job.result, self.grep_job_failures(job.id)))
                         self.session.commit()
@@ -66,10 +64,11 @@ class Review(openQAHelper):
                         for ref in bugrefs:
                             self.add_comment(job, ref)
         if self.tabs_to_open:
-            input("Hit enter to see all tabs")
-            for tab in self.tabs_to_open:
-                time.sleep(2)
-                webbrowser.open(tab)
+            answer = input("Open in browser? [Y/anything else] ")
+            if answer == "Y":
+                for tab in self.tabs_to_open:
+                    time.sleep(2)
+                    webbrowser.open(tab)
 
     def add_comment(self, job, comment):
         self.logger.debug('Add a comment to {} with reference {}. {}t{}'.format(
@@ -155,12 +154,11 @@ class Review(openQAHelper):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--dry_run', action='store_true')
-    parser.add_argument('-b', '--browser', action='store_true')
     parser.add_argument('-m', '--movecache')
     parser.add_argument('-a', '--aliasgroups')
     args = parser.parse_args()
 
-    review = Review(args.dry_run, args.browser, args.aliasgroups)
+    review = Review(args.dry_run, args.aliasgroups)
     if args.movecache:
         review.move_cache(args.movecache)
     else:
