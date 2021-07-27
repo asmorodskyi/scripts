@@ -57,8 +57,8 @@ class Review(openQAHelper):
                             '{} on {} {}t{} [{}]'.format(job.name, job.flavor, self.OPENQA_URL_BASE, job.id,
                                                          failed_modules))
                         self.tabs_to_open.append("{}t{}".format(self.OPENQA_URL_BASE, job.id))
-                        self.session.add(ReviewCache(job.name, failed_modules,
-                                                     job.result, self.grep_job_failures(job.id)))
+                        errors_text = ','.join(self.grep_job_failures(job.id))
+                        self.session.add(ReviewCache(job.name, failed_modules, job.result, errors_text))
                         self.session.commit()
                     else:
                         for ref in bugrefs:
@@ -97,13 +97,13 @@ class Review(openQAHelper):
         errors_text = self.grep_job_failures(job.id)
         comment_applied = False
         for item in self.known_issues_query.filter(KnownIssues.job_name == job.name).\
-                filter(KnownIssues.failed_modules == failed_modules).filter(KnownIssues.errors_text == errors_text).\
-                filter(KnownIssues.job_result == job.result):
-            if item.label == 'skip':
-                self.logger.debug("Ignoring {} due to skip instruction in known issues".format(job))
-            else:
-                self.add_comment(job, item.label)
-            comment_applied = True
+                filter(KnownIssues.failed_modules == failed_modules).filter(KnownIssues.job_result == job.result):
+            if item.errors_text_match(errors_text):
+                if item.label == 'skip':
+                    self.logger.debug("Ignoring {} due to skip instruction in known issues".format(job))
+                else:
+                    self.add_comment(job, item.label)
+                comment_applied = True
         return comment_applied
 
     def move_cache(self, query):
@@ -148,7 +148,7 @@ class Review(openQAHelper):
                         if 'text_data' in frame and 'wait_serial expected:' not in frame['text_data']:
                             all_errors.append(frame['text_data'].split('\n')[0])
         all_errors.sort()
-        return ' '.join(all_errors)
+        return all_errors
 
 
 def main():

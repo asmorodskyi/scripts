@@ -89,6 +89,21 @@ class KnownIssues(Base):
     errors_text = Column(Text)
     label = Column(String)
 
+    def errors_text_match(self, errors_text):
+        # KnownIssues.errors_text is string build from list with ',' delimeter
+        # KnownIssues.errors_text suppose to contain only generic parts of errors
+        for known_issue_error in self.errors_text.split(','):
+            match_found = False
+            # with each error from KnownIssues we will loop over errors of certain job
+            for error in errors_text:
+                if known_issue_error in error:
+                    match_found = True
+                    break
+            if not match_found:
+                # if we failed to found match at least for one error from KnownIssues we consider that they do NOT match
+                return False
+        return True
+
 
 
 
