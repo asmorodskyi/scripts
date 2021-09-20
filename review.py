@@ -106,23 +106,29 @@ class Review(openQAHelper):
                 comment_applied = True
         return comment_applied
 
-    def move_cache(self, query):
-        m = re.match(r"([fn]=[a-z_,]*)\|([a-z#0-9]*)", query)
+    def failedmodule(self, query):
+        m = re.match(r"([a-z_,]*)\|([a-z#0-9]*)", query)
         if m:
-            cache_filter = m.group(1).split('=')
-            label = m.group(2)
-            if cache_filter[0] == 'f':
-                for review in self.reviewcache_query.filter(ReviewCache.failed_modules == cache_filter[1]).all():
-                    if not self.knownissue_exists(review, label):
-                        self.add_knownissue(review, label)
-                    self.reviewcache_query.filter(ReviewCache.id == review.id).delete()
-                self.session.commit()
-            elif cache_filter[0] == 'n':
-                for review in self.reviewcache_query.filter(ReviewCache.job_name == cache_filter[1]).all():
-                    if not self.knownissue_exists(review, label):
-                        self.add_knownissue(review, label)
-                    self.reviewcache_query.filter(ReviewCache.id == review.id).delete()
-                self.session.commit()
+            cache_filter = m.group(0)
+            label = m.group(1)
+            for review in self.reviewcache_query.filter(ReviewCache.failed_modules == cache_filter).all():
+                if not self.knownissue_exists(review, label):
+                    self.add_knownissue(review, label)
+                self.reviewcache_query.filter(ReviewCache.id == review.id).delete()
+            self.session.commit()
+        else:
+            raise ValueError("Unkown key")
+
+    def jobname(self, query):
+        m = re.match(r"([a-z_,]*)\|([a-z#0-9]*)", query)
+        if m:
+            cache_filter = m.group(0)
+            label = m.group(1)
+            for review in self.reviewcache_query.filter(ReviewCache.job_name == cache_filter).all():
+                if not self.knownissue_exists(review, label):
+                    self.add_knownissue(review, label)
+                self.reviewcache_query.filter(ReviewCache.id == review.id).delete()
+            self.session.commit()
         else:
             raise ValueError("Unkown key")
 
@@ -152,15 +158,23 @@ class Review(openQAHelper):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--dry_run', action='store_true')
-    parser.add_argument('-m', '--movecache')
-    parser.add_argument('-a', '--aliasgroups')
+    parser = argparse.ArgumentParser(description="Automatically detect failed jobs and tries to guess how label them \
+        based on local DB and previous failures")
+    parser.add_argument('-d', '--dry_run', action='store_true', help="Fake any calls to openQA with log messages")
+    parser.add_argument('-f', '--failedmodule',
+                        help="[failed_module|#11111] Move all records in reviewcache which has failed_module into \
+                        KnownIssues and label them with #11111")
+    parser.add_argument('-n', '--jobname',
+                        help="[job_name|#11111] Move all records in reviewcache which has job_name into \
+                        KnownIssues and label them with #11111")
+    parser.add_argument('-a', '--aliasgroups', help="switch from default list of groups to some named one")
     args = parser.parse_args()
 
     review = Review(args.dry_run, args.aliasgroups)
-    if args.movecache:
-        review.move_cache(args.movecache)
+    if args.failedmodule:
+        review.failedmodule(args.failedmodule)
+    elif args.jobname:
+        review.jobname(args.jobname)
     else:
         review.run()
 
