@@ -109,8 +109,8 @@ class Review(openQAHelper):
     def failedmodule(self, query):
         m = re.match(r"([a-z_,]*)\|([a-z#0-9]*)", query)
         if m:
-            cache_filter = m.group(0)
-            label = m.group(1)
+            cache_filter = m.group(1)
+            label = m.group(2)
             for review in self.reviewcache_query.filter(ReviewCache.failed_modules == cache_filter).all():
                 if not self.knownissue_exists(review, label):
                     self.add_knownissue(review, label)
@@ -122,8 +122,8 @@ class Review(openQAHelper):
     def jobname(self, query):
         m = re.match(r"([a-z_,]*)\|([a-z#0-9]*)", query)
         if m:
-            cache_filter = m.group(0)
-            label = m.group(1)
+            cache_filter = m.group(1)
+            label = m.group(2)
             for review in self.reviewcache_query.filter(ReviewCache.job_name == cache_filter).all():
                 if not self.knownissue_exists(review, label):
                     self.add_knownissue(review, label)
