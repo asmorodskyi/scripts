@@ -176,12 +176,16 @@ class openQAHelper(TaskHelper):
 
     def get_bugrefs(self, job_id):
         bugrefs = set()
-        comments = requests.get('{}jobs/{}/comments'.format(self.OPENQA_API_BASE, job_id), verify=False).json()
-        if 'error' in comments:
-            raise RuntimeError(comments)
-        for comment in comments:
-            for bug in comment['bugrefs']:
-                bugrefs.add(bug)
+        response = requests.get('{}jobs/{}/comments'.format(self.OPENQA_API_BASE, job_id), verify=False)
+        try:
+            comments = response.json()
+            if 'error' in comments:
+                raise RuntimeError(comments)
+            for comment in comments:
+                for bug in comment['bugrefs']:
+                    bugrefs.add(bug)
+        except simplejson.errors.JSONDecodeError as e:
+            self.logger.error('{} is not JSON. {}'.format(response, e))
         return bugrefs
 
     def check_latency(self, topic, subject):
