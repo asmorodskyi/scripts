@@ -96,8 +96,12 @@ class Review(openQAHelper):
         failed_modules = self.get_failed_modules(job.id)
         errors_text = self.grep_job_failures(job.id)
         comment_applied = False
-        for item in self.known_issues_query.filter(KnownIssues.job_name == job.name).\
-                filter(KnownIssues.failed_modules == failed_modules).filter(KnownIssues.job_result == job.result):
+        for item in self.known_issues_query.filter(KnownIssues.failed_modules == failed_modules).\
+                filter(KnownIssues.job_result == job.result):
+            # handle case when we want to apply to any job based only on failed_modules + error text
+            # so we continue only when it is NOT "ANY" and it is NOT same job name
+            if item.job_name != 'ANY' and item.job_name != job.name:
+                continue
             if item.errors_text_match(errors_text):
                 if item.label == 'skip':
                     self.logger.debug("Ignoring {} due to skip instruction in known issues".format(job))
