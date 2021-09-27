@@ -25,6 +25,7 @@ class TaskHelper:
         self.config = configparser.ConfigParser()
         self.config.read('/etc/{}.ini'.format(self.name))
         self.to_list = self.config.get('DEFAULT', 'to_list', fallback='asmorodskyi@suse.com')
+        self.send_mails = self.config['DEFAULT'].getboolean('send_emails', fallback=True)
         if self.config['DEFAULT'].getboolean('log_to_file', fallback=True):
             self.logger = logzero.setup_logger(
                 name=name, logfile='/var/log/{0}/{0}.log'.format(self.name), formatter=logzero.LogFormatter(
@@ -64,7 +65,8 @@ class TaskHelper:
         if not error:
             error = traceback.format_exc()
         self.logger.error(error)
-        self.send_mail('[{}] ERROR - {}'.format(self.name, socket.gethostname()), error)
+        if self.send_mails:
+            self.send_mail('[{}] ERROR - {}'.format(self.name, socket.gethostname()), error)
 
     def get_latest_build(self, job_group_id=262):
         build = '1'
