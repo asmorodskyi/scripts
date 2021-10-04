@@ -101,6 +101,7 @@ class TaskHelper:
 
     def osd_query(self, query):
         if hasattr(self, 'osd_username') and hasattr(self, 'osd_password') and hasattr(self, 'osd_host'):
+            connection = None
             try:
                 connection = psycopg2.connect(user=self.osd_username, password=self.osd_password,
                                               host=self.osd_host, port="5432", database="openqa")
