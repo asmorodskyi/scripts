@@ -18,13 +18,11 @@
       </style>
    </head>
    <body>
-      <p>Build={{build}}, Group = {{group}}</p>
       <table>
          <tr>
             <th>ID</th>
             <th>Name</th>
             <th>Flavor</th>
-            <th>Result</th>
             <th>Failed Modules</th>
             <th>BugRefs</th>
          </tr>
@@ -33,7 +31,6 @@
             <td><a href="{{baseurl}}{{item.id}}">{{item.id}}</a></td>
             <td>{{item.name}}</td>
             <td>{{item.flavor}}</td>
-            <td>{{item.result}}</td>
             <td>{{item.failed_modules}}</td>
             <td>{% if item.bugrefs %}
             {% for b1 in item.bugrefs %}

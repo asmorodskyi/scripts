@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 import re
 from datetime import datetime
-from datetime import timedelta
 import urllib.request
 import argparse
 import random
@@ -52,11 +51,11 @@ def main():
                 current_test = rez.group(2)
                 all_functiontime.append(
                     FunctionTime(current_test, rez.group(1)))
-    all_functiontime.sort(key = lambda x: x.get_duration())
+    all_functiontime.sort(key=lambda x: x.get_duration())
     overall_pure_time = 0
     for i in range(len(all_functiontime)):
         overall_pure_time += all_functiontime[i].get_duration()
-        print('test - {0} , took - {1}'.format(all_functiontime[i].name, all_functiontime[i].get_duration()))    
+        print('test - {0} , took - {1}'.format(all_functiontime[i].name, all_functiontime[i].get_duration()))
     print('overall time {} minutes'.format(overall_pure_time / 60))
 
 

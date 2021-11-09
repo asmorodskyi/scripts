@@ -14,7 +14,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, MessageLatency, JobSQL
 import configparser
-from datetime import datetime
+from datetime import datetime, timedelta
 import psycopg2
 
 
@@ -222,6 +222,16 @@ class openQAHelper(TaskHelper):
             rez = self.osd_query(find_latest.format(build, group_id, sql_job.name, sql_job.arch, sql_job.flavor))
             if rez[0][0] == sql_job.id:
                 jobs.append(sql_job)
+        return jobs
+
+    def osd_get_latest_failures(self, before_hours, group_ids):
+        jobs = []
+        time_str = str(datetime.now() - timedelta(hours=before_hours))
+        rezult = self.osd_query("{} result='failed' and t_created > '{}'::date and group_id in ({})".format(
+            JobSQL.SELECT_QUERY, time_str, group_ids))
+        for raw_job in rezult:
+            sql_job = JobSQL(raw_job)
+            jobs.append(sql_job)
         return jobs
 
 

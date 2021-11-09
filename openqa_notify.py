@@ -48,6 +48,8 @@ class openQANotify(openQAHelper):
         jinjaEnv = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath="/scripts/"))
         self.notify_template_html = jinjaEnv.get_template("notify_template.html")
         self.notify_template_txt = jinjaEnv.get_template("notify_template.txt")
+        self.latest_report_template_html = jinjaEnv.get_template("latest_report_template.html")
+        self.latest_report_template_txt = jinjaEnv.get_template("latest_report_template.txt")
         for rule in rules_defined:
             self.rules_compiled.append(
                 (re.compile(rule[0].replace('.', '\.').replace('*', '[^.]*').replace('#', '.*')), rule[1]))
@@ -78,6 +80,16 @@ class openQANotify(openQAHelper):
             items=jobs, build=build, group=group_name, baseurl=self.OPENQA_URL_BASE + "t")
         self.send_mail('[Openqa-Notify] New build in {}'.format(group_name), txt_report,
                        html_report, self.config.get(str(group_id), 'to_list', fallback=None))
+
+    def generate_latest_report(self, jobs, hours_depth):
+        txt_report = self.latest_report_template_txt.render(items=jobs)
+        html_report = self.latest_report_template_html.render(items=jobs, baseurl=self.OPENQA_URL_BASE + "t")
+        self.send_mail('[Openqa-Notify] Failures within latest {} hours'.format(hours_depth), txt_report,
+                       html_report, self.config.get('DEFAULT', 'to_list', fallback=None))
+
+    def status(self):
+        jobs = self.osd_get_latest_failures(3, ','.join([str(i) for i in notifier.my_osd_groups]))
+        self.generate_latest_report(jobs, 3)
 
     def handle_job_done(self, groupid):
         latest_build = self.get_latest_build(groupid)
@@ -120,12 +132,16 @@ class openQANotify(openQAHelper):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--generate_report', action='store_true')
+    parser.add_argument('--status', action='store_true')
     args = parser.parse_args()
     global notifier
     notifier = openQANotify()
     if args.generate_report:
-        for group in notifier.my_osd_groups:
-            notifier.handle_job_done(group)
+        if args.status:
+            notifier.status()
+        else:
+            for group in notifier.my_osd_groups:
+                notifier.handle_job_done(group)
     else:
         notifier.run()
 
