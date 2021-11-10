@@ -87,8 +87,36 @@ class openQANotify(openQAHelper):
         self.send_mail('[Openqa-Notify] Failures within latest {} hours'.format(hours_depth), txt_report,
                        html_report, self.config.get('DEFAULT', 'to_list', fallback=None))
 
+    def get_bugrefs_and_failed_modules(self, jobs):
+        for job in jobs:
+            if job.result == 'failed':
+                bugrefs = self.get_bugrefs(job.id)
+                formated_bugrefs = []
+                for bug in bugrefs:
+                    rez = re.search('(poo|bsc)\#(\d+)', bug)
+                    if rez.group(1) == 'poo':
+                        formated_bugrefs.append(
+                            {'href': 'https://progress.opensuse.org/issues/{}'.format(rez.group(2)), 'name': bug})
+                    elif rez.group(1) == 'bsc':
+                        formated_bugrefs.append(
+                            {'href': 'https://bugzilla.suse.com/show_bug.cgi?id={}'.format(rez.group(2)), 'name': bug})
+                    else:
+                        formated_bugrefs.append({'href': '', 'name': bug})
+                if len(formated_bugrefs):
+                    job.bugrefs = formated_bugrefs
+                else:
+                    job.bugrefs = ''
+                failed_modules_rez = self.osd_query(
+                    "select name from job_modules where job_id={} and result='failed'".format(job.id))
+                job.failed_modules = ''
+                for mod_name in failed_modules_rez:
+                    job.failed_modules = "{},{}".format(mod_name[0], job.failed_modules)
+            else:
+                job.bugrefs = ''
+
     def status(self):
         jobs = self.osd_get_latest_failures(3, ','.join([str(i) for i in notifier.my_osd_groups]))
+        self.get_bugrefs_and_failed_modules(jobs)
         self.generate_latest_report(jobs, 3)
 
     def handle_job_done(self, groupid):
@@ -101,31 +129,7 @@ class openQANotify(openQAHelper):
                 self.get_group_name(groupid), latest_build))
         else:
             jobs = self.osd_get_jobs_where(latest_build, groupid)
-            for job in jobs:
-                if job.result == 'failed':
-                    bugrefs = self.get_bugrefs(job.id)
-                    formated_bugrefs = []
-                    for bug in bugrefs:
-                        rez = re.search('(poo|bsc)\#(\d+)', bug)
-                        if rez.group(1) == 'poo':
-                            formated_bugrefs.append(
-                                {'href': 'https://progress.opensuse.org/issues/{}'.format(rez.group(2)), 'name': bug})
-                        elif rez.group(1) == 'bsc':
-                            formated_bugrefs.append(
-                                {'href': 'https://bugzilla.suse.com/show_bug.cgi?id={}'.format(rez.group(2)), 'name': bug})
-                        else:
-                            formated_bugrefs.append({'href': '', 'name': bug})
-                    if len(formated_bugrefs):
-                        job.bugrefs = formated_bugrefs
-                    else:
-                        job.bugrefs = ''
-                    failed_modules_rez = self.osd_query(
-                        "select name from job_modules where job_id={} and result='failed'".format(job.id))
-                    job.failed_modules = ''
-                    for mod_name in failed_modules_rez:
-                        job.failed_modules = "{},{}".format(mod_name[0], job.failed_modules)
-                else:
-                    job.bugrefs = ''
+            self.get_bugrefs_and_failed_modules(jobs)
             self.generate_report(jobs, groupid, latest_build)
 
 
