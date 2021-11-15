@@ -41,12 +41,10 @@ class IsosPost(TaskHelper):
                 exec_str += ' TEST=' + tests_list[:-1]
 
         if args.build:
-            build = args.build
-        else:
-            build = self.get_latest_build()
+            exec_str += ' BUILD=' + args.build
 
-        exec_str += ' BUILD={0} DISTRI={1} VERSION={2} FLAVOR={3} ARCH={4}'.format(
-            build, args.distri, args.version, args.flavor, args.arch)
+        exec_str += ' DISTRI={} VERSION={} FLAVOR={} ARCH={}'.format(
+            args.distri, args.version, args.flavor, args.arch)
 
         if "openqa.opensuse.org" not in exec_str:
             exec_str += ' BUILD_SLE={0}'.format(build)

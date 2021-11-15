@@ -73,6 +73,9 @@ class TaskHelper:
         try:
             group_json = requests.get('https://openqa.suse.de/group_overview/{}.json'.format(job_group_id),
                                       verify=False).json()
+            if len(group_json['build_results']) == 0:
+                self.logger.warning("No jobs found in {}".format(job_group_id))
+                return None
             build = group_json['build_results'][0]['build']
         except Exception as e:
             self.logger.error("Failed to get build from openQA - %s", e)

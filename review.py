@@ -36,6 +36,8 @@ class Review(openQAHelper):
         self.session.query(ReviewCache).delete()
         for groupid in self.my_osd_groups:
             latest_build = self.get_latest_build(groupid)
+            if not latest_build:
+                continue
             previous_builds = self.get_previous_builds(groupid)
             self.logger.info('{} is latest build for {}'.format(latest_build, self.get_group_name(groupid)))
             jobs_to_review = self.osd_get_jobs_where(latest_build, groupid, Review.SQL_WHERE_RESULTS)

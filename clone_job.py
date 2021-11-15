@@ -43,6 +43,8 @@ class SmartClone(openQAHelper):
             m = re.match(r"(\w+)=(\w+)", query)
             groupid = m.group(2)
             latest_build = self.get_latest_build(groupid)
+            if not latest_build:
+                raise ValueError("No jobs was found in {}".format(groupid))
             unique_jobs = self.osd_get_jobs_where(
                 latest_build, groupid, " and test != 'publiccloud_download_testrepos'")
             for job in unique_jobs:
