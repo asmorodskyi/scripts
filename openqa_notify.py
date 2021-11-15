@@ -11,7 +11,6 @@ import argparse
 import pika
 
 from myutils import openQAHelper, is_matched
-from models import JobSQL
 
 global notifier
 
@@ -115,9 +114,17 @@ class openQANotify(openQAHelper):
                 job.bugrefs = ''
 
     def status(self):
+        # any builds in run ?
+        # if yes :
+        # 1.  amount of jobs and statuses . age of oldest and youngest jobs
+        # if no :
+        # when last build was triggered ( the oldest job in this build)
         jobs = self.osd_get_latest_failures(3, ','.join([str(i) for i in notifier.my_osd_groups]))
+        self.logger.info("Getting current bugrefs and list of failed modules for each job")
         self.get_bugrefs_and_failed_modules(jobs)
+        self.logger.info("Generate report for email")
         self.generate_latest_report(jobs, 3)
+        self.open_in_browser(jobs)
 
     def handle_job_done(self, groupid):
         latest_build = self.get_latest_build(groupid)

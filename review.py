@@ -6,12 +6,10 @@ from myutils import openQAHelper
 import argparse
 import urllib3
 import json
-import webbrowser
 from models import JobSQL, Base, ReviewCache, KnownIssues
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import re
-import time
 
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -58,7 +56,7 @@ class Review(openQAHelper):
                         self.logger.info(
                             '{} on {} {}t{} [{}]'.format(job.name, job.flavor, self.OPENQA_URL_BASE, job.id,
                                                          failed_modules))
-                        self.tabs_to_open.append("{}t{}".format(self.OPENQA_URL_BASE, job.id))
+                        self.tabs_to_open.append(job)
                         errors_text = ','.join(self.grep_job_failures(job.id))
                         self.session.add(ReviewCache(job.name, failed_modules, job.result, errors_text))
                         self.session.commit()
@@ -66,11 +64,7 @@ class Review(openQAHelper):
                         for ref in bugrefs:
                             self.add_comment(job, ref)
         if self.tabs_to_open:
-            answer = input("Open in browser? [Y/anything else] ")
-            if answer == "Y":
-                for tab in self.tabs_to_open:
-                    time.sleep(2)
-                    webbrowser.open(tab)
+            self.open_in_browser(self.tabs_to_open)
 
     def add_comment(self, job, comment):
         self.logger.debug('Add a comment to {} with reference {}. {}t{}'.format(

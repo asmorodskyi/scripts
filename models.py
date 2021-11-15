@@ -5,9 +5,12 @@ from datetime import datetime, timedelta
 
 Base = declarative_base()
 
+
 class JobSQL:
 
-    SELECT_QUERY = 'select id, test, result, state, flavor, arch from jobs where '
+    # group_id is queried but not serialized because in most cases we don't need it
+    # but we have one case where we do ( openQAHelper.osd_get_latest_failures)
+    SELECT_QUERY = 'select id, test, result, state, flavor, arch, build, group_id from jobs where '
 
     def __init__(self, raw_job):
         self.id = raw_job[0]
@@ -16,10 +19,12 @@ class JobSQL:
         self.state = raw_job[3]
         self.flavor = raw_job[4]
         self.arch = raw_job[5]
+        self.build = raw_job[6]
 
     def __str__(self):
-        pattern = 'Job(id: {}, name: {}, result: {}, state: {}, flavor: {}, arch: {})'
-        return pattern.format(self.id, self.name, self.result, self.state, self.flavor, self.arch)
+        pattern = 'Job(id: {}, name: {}, result: {}, state: {}, flavor: {}, arch: {}, build: {})'
+        return pattern.format(self.id, self.name, self.result, self.state, self.flavor, self.arch, self.build)
+
 
 class MessageLatency(Base):
 
@@ -71,6 +76,7 @@ class ReviewCache(Base):
         return 'ReviewCache(job_name: {}, job_result: {}, failed_modules: {})'\
                .format(self.job_name, self.job_result, self.failed_modules)
 
+
 class KnownIssues(Base):
 
     __tablename__ = "knownissues"
@@ -103,9 +109,3 @@ class KnownIssues(Base):
                 # if we failed to found match at least for one error from KnownIssues we consider that they do NOT match
                 return False
         return True
-
-
-
-
-
-

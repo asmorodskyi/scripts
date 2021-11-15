@@ -15,7 +15,9 @@ from sqlalchemy.orm import sessionmaker
 from models import Base, MessageLatency, JobSQL
 import configparser
 from datetime import datetime, timedelta
+import time
 import psycopg2
+import webbrowser
 
 
 class TaskHelper:
@@ -137,6 +139,9 @@ class GitHelper(TaskHelper):
 
 class openQAHelper(TaskHelper):
 
+    FIND_LATEST = "select max(id) from jobs where  build='{}' and group_id='{}'  and test='{}' and arch='{}' \
+        and flavor='{}';"
+
     def __init__(self, name, for_o3, load_cache: bool = False, aliasgroups: str = None):
         super(openQAHelper, self).__init__(name)
         self.for_o3 = for_o3
@@ -217,12 +222,11 @@ class openQAHelper(TaskHelper):
     def osd_get_jobs_where(self, build, group_id, extra_conditions=''):
         rezult = self.osd_query("{} build='{}' and group_id='{}' {}".format(
             JobSQL.SELECT_QUERY, build, group_id, extra_conditions))
-        find_latest = "select max(id) from jobs where  build='{}' and group_id='{}'  and test='{}' and arch='{}' \
-            and flavor='{}';"
         jobs = []
         for raw_job in rezult:
             sql_job = JobSQL(raw_job)
-            rez = self.osd_query(find_latest.format(build, group_id, sql_job.name, sql_job.arch, sql_job.flavor))
+            rez = self.osd_query(self.FIND_LATEST.format(
+                build, group_id, sql_job.name, sql_job.arch, sql_job.flavor))
             if rez[0][0] == sql_job.id:
                 jobs.append(sql_job)
         return jobs
@@ -234,8 +238,19 @@ class openQAHelper(TaskHelper):
             JobSQL.SELECT_QUERY, time_str, group_ids))
         for raw_job in rezult:
             sql_job = JobSQL(raw_job)
-            jobs.append(sql_job)
+            rez = self.osd_query(self.FIND_LATEST.format(
+                sql_job.build, raw_job[7], sql_job.name, sql_job.arch, sql_job.flavor))
+            if rez[0][0] == sql_job.id:
+                jobs.append(sql_job)
+        self.logger.info("Got {} failed jobs in monitored job groups on osd".format(len(rezult)))
         return jobs
+
+    def open_in_browser(self, jobs):
+        answer = input("Open in browser? [Y/anything else] ")
+        if answer == "Y":
+            for job in jobs:
+                time.sleep(2)
+                webbrowser.open("{}t{}".format(self.OPENQA_URL_BASE, job.id))
 
 
 def is_matched(rules, topic, msg):
