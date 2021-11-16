@@ -113,7 +113,7 @@ class openQANotify(openQAHelper):
             else:
                 job.bugrefs = ''
 
-    def status(self):
+    def status(self, not_processed):
         # any builds in run ?
         # if yes :
         # 1.  amount of jobs and statuses . age of oldest and youngest jobs
@@ -122,6 +122,13 @@ class openQANotify(openQAHelper):
         jobs = self.osd_get_latest_failures(3, ','.join([str(i) for i in notifier.my_osd_groups]))
         self.logger.info("Getting current bugrefs and list of failed modules for each job")
         self.get_bugrefs_and_failed_modules(jobs)
+        if not_processed:
+            jobs = [job for job in jobs if len(job.bugrefs) == 0]
+            if len(jobs) == 0:
+                self.logger.info("No not labelled jobs. Exiting ")
+                return 0
+            else:
+                self.logger.info("{} jobs left after filter out labelled".format(len(jobs)))
         answer = input("Open in browser? [Y/anything else] (will send email otherwise) ")
         if answer == "Y":
             self.open_in_browser(jobs)
@@ -147,12 +154,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--generate_report', action='store_true')
     parser.add_argument('--status', action='store_true')
+    parser.add_argument('--not_processed', action='store_true', default=False)
     args = parser.parse_args()
     global notifier
     notifier = openQANotify()
     if args.generate_report:
         if args.status:
-            notifier.status()
+            notifier.status(args.not_processed)
         else:
             for group in notifier.my_osd_groups:
                 notifier.handle_job_done(group)
