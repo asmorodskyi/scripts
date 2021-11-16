@@ -64,7 +64,9 @@ class Review(openQAHelper):
                         for ref in bugrefs:
                             self.add_comment(job, ref)
         if self.tabs_to_open:
-            self.open_in_browser(self.tabs_to_open)
+            answer = input("Open in browser? [Y/anything else] ")
+            if answer == "Y":
+                self.open_in_browser(self.tabs_to_open)
 
     def add_comment(self, job, comment):
         self.logger.debug('Add a comment to {} with reference {}. {}t{}'.format(

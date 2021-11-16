@@ -122,9 +122,12 @@ class openQANotify(openQAHelper):
         jobs = self.osd_get_latest_failures(3, ','.join([str(i) for i in notifier.my_osd_groups]))
         self.logger.info("Getting current bugrefs and list of failed modules for each job")
         self.get_bugrefs_and_failed_modules(jobs)
-        self.logger.info("Generate report for email")
-        self.generate_latest_report(jobs, 3)
-        self.open_in_browser(jobs)
+        answer = input("Open in browser? [Y/anything else] (will send email otherwise) ")
+        if answer == "Y":
+            self.open_in_browser(jobs)
+        else:
+            self.logger.info("Generate report for email")
+            self.generate_latest_report(jobs, 3)
 
     def handle_job_done(self, groupid):
         latest_build = self.get_latest_build(groupid)

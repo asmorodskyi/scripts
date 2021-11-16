@@ -246,11 +246,9 @@ class openQAHelper(TaskHelper):
         return jobs
 
     def open_in_browser(self, jobs):
-        answer = input("Open in browser? [Y/anything else] ")
-        if answer == "Y":
-            for job in jobs:
-                time.sleep(2)
-                webbrowser.open("{}t{}".format(self.OPENQA_URL_BASE, job.id))
+        for job in jobs:
+            time.sleep(2)
+            webbrowser.open("{}t{}".format(self.OPENQA_URL_BASE, job.id))
 
 
 def is_matched(rules, topic, msg):
