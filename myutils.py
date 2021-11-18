@@ -250,6 +250,17 @@ class openQAHelper(TaskHelper):
             time.sleep(2)
             webbrowser.open("{}t{}".format(self.OPENQA_URL_BASE, job.id))
 
+    def osd_job_group_results(self, groupid, build):
+        rezult = self.osd_query(
+            "select result,count(*) from jobs where group_id={} and build='{}' group by result;".format(groupid, build))
+        final_string = ""
+        cnt_jobs = 0
+        for rez in rezult:
+            final_string = "{} {}={}".format(final_string, rez[0], rez[1])
+            cnt_jobs += rez[1]
+        final_string = "total jobs={} {}".format(cnt_jobs, final_string)
+        return final_string
+
 
 def is_matched(rules, topic, msg):
     for rule in rules:
