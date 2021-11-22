@@ -109,7 +109,7 @@ class Review(openQAHelper):
         return comment_applied
 
     def failedmodule(self, query):
-        m = re.match(r"([a-z_,]*)\|([a-z#0-9]*)", query)
+        m = re.match(r"([a-z_,0-9]*)\|([a-z#0-9]*)", query)
         if m:
             cache_filter = m.group(1)
             label = m.group(2)
@@ -122,7 +122,7 @@ class Review(openQAHelper):
             raise ValueError("Unkown key")
 
     def jobname(self, query):
-        m = re.match(r"([a-z_,]*)\|([a-z#0-9]*)", query)
+        m = re.match(r"([a-z_,0-9]*)\|([a-z#0-9]*)", query)
         if m:
             cache_filter = m.group(1)
             label = m.group(2)
