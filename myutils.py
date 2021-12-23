@@ -37,10 +37,6 @@ class TaskHelper:
             self.logger = logzero.setup_logger(
                 name=name, formatter=logzero.LogFormatter(
                     fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
-        if self.config.has_section('OSD'):
-            self.osd_username = self.config.get('OSD', 'username')
-            self.osd_password = self.config.get('OSD', 'password')
-            self.osd_host = self.config.get('OSD', 'host')
 
     def send_mail(self, subject, message, html_message: str = None, custom_to_list: str = None):
         try:
@@ -104,25 +100,6 @@ class TaskHelper:
         except subprocess.CalledProcessError:
             self.handle_error('Command died')
 
-    def osd_query(self, query):
-        if hasattr(self, 'osd_username') and hasattr(self, 'osd_password') and hasattr(self, 'osd_host'):
-            connection = None
-            try:
-                connection = psycopg2.connect(user=self.osd_username, password=self.osd_password,
-                                              host=self.osd_host, port="5432", database="openqa")
-                cursor = connection.cursor()
-                # self.logger.debug(query)
-                cursor.execute(query)
-                return cursor.fetchall()
-            except (Exception, psycopg2.Error) as error:
-                self.logger.error(error)
-            finally:
-                if connection is not None:
-                    cursor.close()
-                    connection.close()
-        else:
-            raise AttributeError("Connection to osd is not defined ")
-
 
 class GitHelper(TaskHelper):
 
@@ -165,39 +142,11 @@ class openQAHelper(TaskHelper):
             self.session = Session()
             self.msg_query = self.session.query(MessageLatency)
 
-    def get_previous_builds(self, job_group_id: int):
-        builds = ""
-        group_json = requests.get('{}group_overview/{}.json'.format(self.OPENQA_URL_BASE, job_group_id),
-                                  verify=False).json()
-        max_deep = len(group_json['build_results'])
-        # we need maximum 3 builds
-        for i in range(0, 3):
-            if (i + 1) >= max_deep:
-                break
-            if not builds:
-                builds = "'{}'".format(group_json['build_results'][i + 1]['build'])
-            else:
-                builds = "{},'{}'".format(builds, group_json['build_results'][i + 1]['build'])
-        return builds
-
     def get_group_name(self, job_group_id: int):
         group_json = requests.get('{}group_overview/{}.json'.format(self.OPENQA_URL_BASE, job_group_id),
                                   verify=False).json()
         return group_json['group']['name']
 
-    def get_bugrefs(self, job_id):
-        bugrefs = set()
-        response = requests.get('{}jobs/{}/comments'.format(self.OPENQA_API_BASE, job_id), verify=False)
-        try:
-            comments = response.json()
-            if 'error' in comments:
-                raise RuntimeError(comments)
-            for comment in comments:
-                for bug in comment['bugrefs']:
-                    bugrefs.add(bug)
-        except simplejson.errors.JSONDecodeError as e:
-            self.logger.error('{} is not JSON. {}'.format(response, e))
-        return bugrefs
 
     def check_latency(self, topic, subject):
         msg = self.msg_query.filter(MessageLatency.topic == topic).filter(
@@ -244,22 +193,6 @@ class openQAHelper(TaskHelper):
                 jobs.append(sql_job)
         self.logger.info("Got {} failed jobs in monitored job groups on osd".format(len(rezult)))
         return jobs
-
-    def open_in_browser(self, jobs):
-        for job in jobs:
-            time.sleep(2)
-            webbrowser.open("{}t{}".format(self.OPENQA_URL_BASE, job.id))
-
-    def osd_job_group_results(self, groupid, build):
-        rezult = self.osd_query(
-            "select result,count(*) from jobs where group_id={} and build='{}' group by result;".format(groupid, build))
-        final_string = ""
-        cnt_jobs = 0
-        for rez in rezult:
-            final_string = "{} {}={}".format(final_string, rez[0], rez[1])
-            cnt_jobs += rez[1]
-        final_string = "total jobs={} {}".format(cnt_jobs, final_string)
-        return final_string
 
 
 def is_matched(rules, topic, msg):

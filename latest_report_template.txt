@@ -1,9 +1,0 @@
-======================================================================================================================
-+ID      || Name     || Flavor ||{% if pc %} Instance Type   ||{% endif %}  Failed Modules     ||  BugRefs               +
-======================================================================================================================
-{% for item in items %}
-+{{item.id}}||{{item.name}}||{{item.flavor}}||{% if pc %}{{item.instance_type}}||{% endif %}{{item.failed_modules}}||{{item.bugrefs}}+
-{% endfor %}
-=======================================================================================================================
-
-Email sent from autobot.qa.suse.de by script https://github.com/asmorodskyi/scripts/blob/master/openqa_notify.py triggered by cron job
