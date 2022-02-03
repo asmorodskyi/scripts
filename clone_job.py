@@ -35,14 +35,15 @@ class SmartClone(openQAHelper):
             self.handle_error()
 
     def query(self, query: str, dryrun: bool = False):
+        m = re.match(r"(\w+)=(\w+)", query)
+        groupid = m.group(2)
+        latest_build = self.get_latest_build(groupid)
         if query.startswith('allpc'):
-            unique_jobs = self.osd_get_jobs_where(latest_build, groupid, " and test != 'publiccloud_upload_img'")
+            unique_jobs = self.osd_get_jobs_where(
+                latest_build, groupid, " and test = 'publiccloud_download_testrepos'")
             for job in unique_jobs:
                 self.shell_exec('{} {} {}'.format(self.cmd, job.id, self.params_str), log=True, dryrun=dryrun)
         elif query.startswith('fixworker'):
-            m = re.match(r"(\w+)=(\w+)", query)
-            groupid = m.group(2)
-            latest_build = self.get_latest_build(groupid)
             if not latest_build:
                 raise ValueError("No jobs was found in {}".format(groupid))
             unique_jobs = self.osd_get_jobs_where(
