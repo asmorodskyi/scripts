@@ -37,6 +37,10 @@ class TaskHelper:
             self.logger = logzero.setup_logger(
                 name=name, formatter=logzero.LogFormatter(
                     fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
+        if self.config.has_section('OSD'):
+            self.osd_username = self.config.get('OSD', 'username')
+            self.osd_password = self.config.get('OSD', 'password')
+            self.osd_host = self.config.get('OSD', 'host')
 
     def send_mail(self, subject, message, html_message: str = None, custom_to_list: str = None):
         try:
@@ -100,6 +104,25 @@ class TaskHelper:
         except subprocess.CalledProcessError:
             self.handle_error('Command died')
 
+    def osd_query(self, query):
+        if hasattr(self, 'osd_username') and hasattr(self, 'osd_password') and hasattr(self, 'osd_host'):
+            connection = None
+            try:
+                connection = psycopg2.connect(user=self.osd_username, password=self.osd_password,
+                                              host=self.osd_host, port="5432", database="openqa")
+                cursor = connection.cursor()
+                # self.logger.debug(query)
+                cursor.execute(query)
+                return cursor.fetchall()
+            except (Exception, psycopg2.Error) as error:
+                self.logger.error(error)
+            finally:
+                if connection is not None:
+                    cursor.close()
+                    connection.close()
+        else:
+            raise AttributeError("Connection to osd is not defined ")
+
 
 class GitHelper(TaskHelper):
 
@@ -146,7 +169,6 @@ class openQAHelper(TaskHelper):
         group_json = requests.get('{}group_overview/{}.json'.format(self.OPENQA_URL_BASE, job_group_id),
                                   verify=False).json()
         return group_json['group']['name']
-
 
     def check_latency(self, topic, subject):
         msg = self.msg_query.filter(MessageLatency.topic == topic).filter(
