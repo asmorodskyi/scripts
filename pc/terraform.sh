@@ -16,7 +16,11 @@ $PODMAN_EXE init
 if [ $CSP = "gce" ]; then
   $PODMAN_EXE apply -var "image_id=$IMAGE" -var 'instance_count=1' -var 'type=n1-standard-2' -var 'region=europe-west1-b' -var 'name=openqa-suse-de' -var 'project=suse-sle-qa' -auto-approve
 elif [ $CSP = "azure" ]; then
-  $PODMAN_EXE apply -var 'name=openqa-suse-de' -var 'offer=sles-15-sp2-byos' -var 'type=Standard_B1ms' -auto-approve
+  IMAGE_VAR='offer=sles-15-sp2-byos'
+  if [ -z "$IMAGE" ]; then
+    IMAGE_VAR="image_id=$IMAGE"
+  fi
+  $PODMAN_EXE apply -var 'name=openqa-suse-de' -var $IMAGE_VAR -var 'type=Standard_B1ms' -auto-approve
 elif [ $CSP = "ec2" ]; then
   $PODMAN_EXE apply -var "image_id=$IMAGE" -var 'instance_count=1' -var 'type=t2.large' -var 'region=eu-central-1' -auto-approve
 fi
