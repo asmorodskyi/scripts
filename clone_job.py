@@ -19,7 +19,7 @@ class SmartClone(openQAHelper):
         if args.resetworker:
             self.params_str += ' WORKER_CLASS=qemu_x86_64 '
         if args.branch:
-            self.params_str += ' CASEDIR=https://github.com/{0}/os-autoinst-distri-opensuse.git#{1}'.format(
+            self.params_str += ' CASEDIR=https://github.com/{0}/os-autoinst-distri-opensuse.git#{1} BUILD={1}'.format(
                 args.github_user, args.branch)
         if args.winst:
             self.cmd += ' --within-instance {}'.format(args.frm)
