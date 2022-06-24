@@ -16,6 +16,9 @@ class GitCheckout(GitHelper):
             self.repo.heads[branch_name].set_tracking_branch(
                 self.remote.refs[branch_name])
             self.repo.heads[branch_name].checkout()
+        elif checkout_type == 'm':
+            self.repo.git.checkout(self.master)
+            self.repo.git.pull()
 
 
 def main():

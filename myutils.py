@@ -9,7 +9,7 @@ import traceback
 import requests
 import subprocess
 import json
-from git import Repo
+from git import Repo, Git
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, MessageLatency, JobSQL
@@ -129,12 +129,16 @@ class GitHelper(TaskHelper):
     def __init__(self):
         super().__init__("GitHelper")
         self.repo = Repo(os.getcwd())
+        remotes = Git().remote().split()
+        branches = Git().branch("--all").split()
         self.remote = None
-        try:
-            if self.repo.remotes.asmorodskyi.exists():
-                self.remote = self.repo.remotes.asmorodskyi
-        except Exception:
+        self.master = "master"
+        if "asmorodskyi" in remotes:
+            self.remote = self.repo.remotes.asmorodskyi
+        else:
             self.remote = self.repo.remotes.origin
+        if "master" not in branches:
+            self.master = "main"
 
 
 class openQAHelper(TaskHelper):
