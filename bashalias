@@ -26,3 +26,4 @@ alias l='ls -CFlh'
 alias lsd="ls -alF | grep /$"
 alias diskspace="du -S | sort -n -r |more"
 alias docker_cleanup="docker system prune -f -a"
+alias ucreds="xclip -o > ~/.aws/credentials; sed -i s/138419567366_AWSAdministratorAccess/default/ ~/.aws/credentials"
