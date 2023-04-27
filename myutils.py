@@ -27,7 +27,7 @@ class TaskHelper:
         self.config = configparser.ConfigParser()
         self.config.read('/etc/{}.ini'.format(self.name))
         self.to_list = self.config.get('DEFAULT', 'to_list', fallback='asmorodskyi@suse.com')
-        self.send_mails = self.config['DEFAULT'].getboolean('send_emails', fallback=True)
+        self.send_mails = self.config['DEFAULT'].getboolean('send_emails', fallback=False)
         if self.config['DEFAULT'].getboolean('log_to_file', fallback=True):
             self.logger = logzero.setup_logger(
                 name=name, logfile='/var/log/{0}/{0}.log'.format(self.name), formatter=logzero.LogFormatter(
