@@ -16,21 +16,25 @@ class SmartPull(TaskHelper):
                 self.logger.info("HEAD is dirty, trying to stash changes")
                 repo.git.stash('save')
                 was_dirty = True
-            old_branch = 'master'
-            if str(repo.active_branch) != "master":
+            if 'master' in repo.remote().refs:
+                master_branch = 'master'
+            else:
+                master_branch = 'main'
+            old_branch = master_branch
+            if str(repo.active_branch) != master_branch:
                 self.logger.info(
-                    "HEAD pointing to %s,trying switch to master", repo.active_branch)
+                    "HEAD pointing to %s,trying switch to %s", repo.active_branch, master_branch)
                 old_branch = repo.active_branch
-                repo.git.checkout('master')
-            repo.remote().pull('master')
+                repo.git.checkout(master_branch)
+            repo.remote().pull(master_branch)
             self.logger.info(
                 "After pulling changes head pointing to %s", repo.commit())
-            if old_branch != "master":
+            if old_branch != master_branch:
                 self.logger.info(
                     "HEAD was at %s, switching it back", old_branch)
                 repo.git.checkout(old_branch)
             if was_dirty:
-                self.logger.info("master was dirty, so reapplying changes")
+                self.logger.info("%s was dirty, so reapplying changes", master_branch)
                 repo.git.stash('apply')
         except Exception:
             self.handle_error()
