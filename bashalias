@@ -27,3 +27,4 @@ alias lsd="ls -alF | grep /$"
 alias diskspace="du -S | sort -n -r |more"
 alias docker_cleanup="docker system prune -f -a"
 alias ucreds="xclip -o > ~/.aws/credentials; sed -i s/138419567366_AWSAdministratorAccess/default/ ~/.aws/credentials"
+alias uvars='export AWS_ACCESS_KEY_ID_$AWS_ACC=$AWS_ACCESS_KEY_ID; export AWS_SECRET_ACCESS_KEY_$AWS_ACC=$AWS_SECRET_ACCESS_KEY; export AWS_SESSION_TOKEN_$AWS_ACC=$AWS_SESSION_TOKEN'
