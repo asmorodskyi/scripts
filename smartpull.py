@@ -20,7 +20,7 @@ class SmartPull(TaskHelper):
                 self.logger.warning(f"{repo_path} HEAD pointing to {repo.active_branch}, will only fetch")
                 repo.remote().fetch()
             else:
-                self.logger.info("HEAD is clean, will pull")
+                self.logger.info(f"{repo_path} HEAD is clean, will pull")
                 repo.remote().pull(master_branch)
                 if initial_commit != repo.commit():
                     self.logger.warning("master branch updated")
