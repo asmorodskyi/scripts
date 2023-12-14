@@ -22,6 +22,8 @@ class SmartClone(openQAHelper):
             self.cmd += f' --within-instance {args.frm}'
         else:
             self.cmd += f' --from {args.frm}'
+        if args.skipmaintenance:
+            self.params_str += 'SKIP_MAINTENANCE_UPDATES=1 PUBLIC_CLOUD_IGNORE_EMPTY_REPO=1 PUBLIC_CLOUD_SKIP_MU=1'
 
     def run(self, jobid, dryrun: bool = False):
         try:
@@ -71,6 +73,7 @@ def main():
     parser.add_argument('-w', '--winst', action='store_true')
     parser.add_argument('-d', '--dryrun', action='store_true')
     parser.add_argument('-b', '--branch')
+    parser.add_argument('-s', '--skipmaintenance', action='store_true', help='Add variables causing job to skip maint. updates')
     parser.add_argument('-g', '--github-user', default='asmorodskyi')
 
     args = parser.parse_args()
