@@ -1,10 +1,7 @@
 #!/usr/bin/python
 
-import subprocess
 import argparse
-import sys
 import requests
-import json
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--host')

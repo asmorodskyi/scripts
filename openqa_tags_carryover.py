@@ -10,15 +10,14 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 class TagCarryOver(openQAHelper):
 
     def __init__(self):
-        super(TagCarryOver, self).__init__('tagscarryover', False, load_cache=False)
+        super(TagCarryOver, self).__init__('tagscarryover', load_cache=False)
 
     def get_latest_comment(self, groupid, parent_group: bool):
         if parent_group:
             groupurl = 'parent_groups'
         else:
             groupurl = 'groups'
-        comments = requests.get('{}{}/{}/comments'.format(self.OPENQA_API_BASE, groupurl,
-                                                          groupid), verify=False).json()
+        comments = self.osd_get(f'api/v1/{groupurl}/{groupid}/comments')
         if 'error' in comments:
             raise RuntimeError(comments)
         latest_comment = None

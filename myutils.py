@@ -22,6 +22,7 @@ class TaskHelper:
 
     def __init__(self, name):
         self.name = name
+        self.OPENQA_URL_BASE = 'https://openqa.suse.de/'
         self.config = configparser.ConfigParser()
         self.config.read(f'/etc/{self.name}.ini')
         self.to_list = self.config.get('DEFAULT', 'to_list', fallback='asmorodskyi@suse.com')
@@ -61,11 +62,15 @@ class TaskHelper:
         if self.send_mails:
             self.send_mail('[{}] ERROR - {}'.format(self.name, socket.gethostname()), error)
 
+    def osd_get(self, suffix):
+        response = requests.get(f'{self.OPENQA_URL_BASE}{suffix}', timeout=100, verify=False)
+        response.raise_for_status()
+        return response.json()
+
     def get_latest_build(self, job_group_id=262):
         build = '1'
         try:
-            group_json = requests.get(f'https://openqa.suse.de/group_overview/{job_group_id}.json',
-                                      verify=False).json()
+            group_json = self.osd_get(f'/group_overview/{job_group_id}.json')
             if len(group_json['build_results']) == 0:
                 self.logger.warning(f"No jobs found in {job_group_id}")
                 return None
@@ -136,9 +141,8 @@ class openQAHelper(TaskHelper):
     FIND_LATEST = "select max(id) from jobs where  build='{}' and group_id='{}'  and test='{}' and arch='{}' \
         and flavor='{}';"
 
-    def __init__(self, name, for_o3, load_cache: bool = False, aliasgroups: str = None):
+    def __init__(self, name, load_cache: bool = False, aliasgroups: str = None):
         super(openQAHelper, self).__init__(name)
-        self.for_o3 = for_o3
         if aliasgroups:
             groups_section = 'ALIAS'
             var_name = aliasgroups
@@ -147,11 +151,6 @@ class openQAHelper(TaskHelper):
             var_name = 'groups'
         self.my_osd_groups = [int(num_str) for num_str in str(self.config.get(
             groups_section, var_name, fallback='262,219,274,275')).split(',')]
-        if self.for_o3:
-            self.OPENQA_URL_BASE = 'https://openqa.opensuse.org/'
-        else:
-            self.OPENQA_URL_BASE = 'https://openqa.suse.de/'
-        self.OPENQA_API_BASE = self.OPENQA_URL_BASE + 'api/v1/'
         if load_cache:
             engine = create_engine('sqlite:////scripts/openqa_cache.db')
             Base.metadata.create_all(engine, Base.metadata.tables.values(), checkfirst=True)
@@ -160,8 +159,7 @@ class openQAHelper(TaskHelper):
             self.msg_query = self.session.query(MessageLatency)
 
     def get_group_name(self, job_group_id: int):
-        group_json = requests.get(f'{self.OPENQA_URL_BASE}group_overview/{job_group_id}.json',
-                                  verify=False).json()
+        group_json = self.osd_get(f'group_overview/{job_group_id}.json')
         return group_json['group']['name']
 
     def check_latency(self, topic, subject):
@@ -194,6 +192,13 @@ class openQAHelper(TaskHelper):
             if rez[0][0] == sql_job.id:
                 jobs.append(sql_job)
         return jobs
+
+    def osd_get_job_variable(self, jobid, variable):
+        job_json = self.osd_get(f'/tests/{jobid}/file/vars.json')
+        if variable in job_json:
+            return job_json[variable]
+        else:
+            raise ValueError(f'{variable} not presented in jobID={jobid}')
 
     def osd_get_latest_failures(self, before_hours, group_ids):
         jobs = []

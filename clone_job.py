@@ -11,13 +11,11 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 class SmartClone(openQAHelper):
 
     def __init__(self, args):
-        super(SmartClone, self).__init__('SmartClone', False, load_cache=True)
+        super(SmartClone, self).__init__('SmartClone', load_cache=True)
         self.cmd = '/usr/share/openqa/script/clone_job.pl --skip-chained-deps --parental-inheritance'
         self.params_str = ''
         if args.params:
             self.params_str = f' {args.params.replace(",", " ")}'
-        if args.resetworker:
-            self.params_str += ' WORKER_CLASS=qemu_x86_64 '
         if args.branch:
             self.params_str += f' CASEDIR=https://github.com/{args.github_user}/os-autoinst-distri-opensuse.git#{args.branch} BUILD={args.branch}'
         if args.winst:
@@ -73,7 +71,6 @@ def main():
     parser.add_argument('-w', '--winst', action='store_true')
     parser.add_argument('-d', '--dryrun', action='store_true')
     parser.add_argument('-b', '--branch')
-    parser.add_argument('-r', '--resetworker', action='store_true')
     parser.add_argument('-g', '--github-user', default='asmorodskyi')
 
     args = parser.parse_args()

@@ -30,9 +30,10 @@ def msg_cb(ch, method, properties, body):
 class openQABot(openQAHelper):
 
     def __init__(self, for_o3):
-        super(openQABot, self).__init__('openqabot', for_o3, load_cache=False)
+        super(openQABot, self).__init__('openqabot', load_cache=False)
         self.rules_compiled = []
-        if self.for_o3:
+        if for_o3:
+            self.OPENQA_URL_BASE = 'https://openqa.opensuse.org'
             self.binding_key = "opensuse.openqa.job.done"
             rules_defined = [
                 (
@@ -67,18 +68,18 @@ class openQABot(openQAHelper):
         hdd = 'None'
         if 'HDD_1' in msg:
             hdd = msg['HDD_1']
-        message = '''  
-        Build={build}
-        Flavor={flavor}
-        Disk={disk}
-        JobID={jobURL}
-    '''.format(build=msg['BUILD'], flavor=msg['FLAVOR'], disk=hdd, jobURL=job_url)
-        super().send_mail('[Openqa-Notify] {}'.format(subj_text), message)
+        message = f'''
+        Build={msg['BUILD']}
+        Flavor={msg['FLAVOR']}
+        Disk={hdd}
+        JobID={job_url}
+    '''
+        super().send_mail(f'[Openqa-Notify] {subj_text}', message)
 
     def run(self):
         while True:
             try:
-                self.logger.info("Connecting to {}".format(self.amqp_server))
+                self.logger.info(f"Connecting to {self.amqp_server}")
                 connection = pika.BlockingConnection(pika.URLParameters(self.amqp_server))
                 channel = connection.channel()
                 channel.exchange_declare(exchange="pubsub", exchange_type='topic', passive=True)
