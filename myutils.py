@@ -1,23 +1,21 @@
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-import logzero
 import smtplib
 import socket
-import os
 import traceback
-import requests
+import os
 import subprocess
 import json
-from git import Repo, Git
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from models import Base, MessageLatency, JobSQL
 import configparser
 from datetime import datetime, timedelta
-import time
+import requests
+import logzero
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 import psycopg2
-import webbrowser
+from git import Repo, Git
+from models import Base, MessageLatency, JobSQL
 
 
 class TaskHelper:
@@ -25,18 +23,11 @@ class TaskHelper:
     def __init__(self, name):
         self.name = name
         self.config = configparser.ConfigParser()
-        self.config.read('/etc/{}.ini'.format(self.name))
+        self.config.read(f'/etc/{self.name}.ini')
         self.to_list = self.config.get('DEFAULT', 'to_list', fallback='asmorodskyi@suse.com')
         self.send_mails = self.config['DEFAULT'].getboolean('send_emails', fallback=False)
-        if self.config['DEFAULT'].getboolean('log_to_file', fallback=True):
-            self.logger = logzero.setup_logger(
-                name=name, logfile='/var/log/{0}/{0}.log'.format(self.name), formatter=logzero.LogFormatter(
-                    fmt='%(color)s[%(asctime)s %(module)s:%(lineno)d]%(end_color)s %(message)s',
-                    datefmt='%d-%m %H:%M:%S'))
-        else:
-            self.logger = logzero.setup_logger(
-                name=name, formatter=logzero.LogFormatter(
-                    fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
+        self.logger = logzero.setup_logger(name=name, formatter=logzero.LogFormatter(
+                fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
         if self.config.has_section('OSD'):
             self.osd_username = self.config.get('OSD', 'username')
             self.osd_password = self.config.get('OSD', 'password')
@@ -61,7 +52,7 @@ class TaskHelper:
             server.ehlo()
             server.sendmail('asmorodskyi@suse.com', custom_to_list.split(','), mimetext.as_string())
         except Exception:
-            self.logger.error("Fail to send email - {}".format(traceback.format_exc()))
+            self.logger.error(f"Fail to send email - {traceback.format_exc()}")
 
     def handle_error(self, error=''):
         if not error:
@@ -73,20 +64,19 @@ class TaskHelper:
     def get_latest_build(self, job_group_id=262):
         build = '1'
         try:
-            group_json = requests.get('https://openqa.suse.de/group_overview/{}.json'.format(job_group_id),
+            group_json = requests.get(f'https://openqa.suse.de/group_overview/{job_group_id}.json',
                                       verify=False).json()
             if len(group_json['build_results']) == 0:
-                self.logger.warning("No jobs found in {}".format(job_group_id))
+                self.logger.warning(f"No jobs found in {job_group_id}")
                 return None
             build = group_json['build_results'][0]['build']
         except Exception as e:
             self.logger.error("Failed to get build from openQA - %s", e)
-        finally:
-            return build
+        return build
 
     def shell_exec(self, cmd, log=False, is_json=False, dryrun: bool = False):
         if dryrun:
-            self.logger.info("NOT EXECUTING - {}".format(cmd))
+            self.logger.info(f"NOT EXECUTING - {cmd}")
             return
         try:
             if log:
@@ -170,7 +160,7 @@ class openQAHelper(TaskHelper):
             self.msg_query = self.session.query(MessageLatency)
 
     def get_group_name(self, job_group_id: int):
-        group_json = requests.get('{}group_overview/{}.json'.format(self.OPENQA_URL_BASE, job_group_id),
+        group_json = requests.get(f'{self.OPENQA_URL_BASE}group_overview/{job_group_id}.json',
                                   verify=False).json()
         return group_json['group']['name']
 
@@ -180,11 +170,11 @@ class openQAHelper(TaskHelper):
         rez = 0
         if msg:
             if datetime.now() < msg.locked_till:
-                self.logger.info('still locked {}'.format(msg))
+                self.logger.info(f'still locked {msg}')
                 rez = 3
             else:
                 msg.lock()
-                self.logger.info('Got locked {}'.format(msg))
+                self.logger.info(f'Got locked {msg}')
                 rez = 2
             msg.inc_cnt()
         else:
@@ -195,8 +185,7 @@ class openQAHelper(TaskHelper):
         return rez
 
     def osd_get_jobs_where(self, build, group_id, extra_conditions=''):
-        rezult = self.osd_query("{} build='{}' and group_id='{}' {}".format(
-            JobSQL.SELECT_QUERY, build, group_id, extra_conditions))
+        rezult = self.osd_query(f"{JobSQL.SELECT_QUERY} build='{build}' and group_id='{group_id}' {extra_conditions}")
         jobs = []
         for raw_job in rezult:
             sql_job = JobSQL(raw_job)
@@ -209,15 +198,14 @@ class openQAHelper(TaskHelper):
     def osd_get_latest_failures(self, before_hours, group_ids):
         jobs = []
         time_str = str(datetime.now() - timedelta(hours=before_hours))
-        rezult = self.osd_query("{} result='failed' and t_created > '{}'::date and group_id in ({})".format(
-            JobSQL.SELECT_QUERY, time_str, group_ids))
+        rezult = self.osd_query(f"{JobSQL.SELECT_QUERY} result='failed' and t_created > '{time_str}'::date and group_id in ({group_ids})")
         for raw_job in rezult:
             sql_job = JobSQL(raw_job)
             rez = self.osd_query(self.FIND_LATEST.format(
                 sql_job.build, raw_job[7], sql_job.name, sql_job.arch, sql_job.flavor))
             if rez[0][0] == sql_job.id:
                 jobs.append(sql_job)
-        self.logger.info("Got {} failed jobs in monitored job groups on osd".format(len(rezult)))
+        self.logger.info(f"Got {len(rezult)} failed jobs in monitored job groups on osd")
         return jobs
 
 
