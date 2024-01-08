@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 from git import Repo
+from git.exc import GitCommandError
 from myutils import TaskHelper
 
 
@@ -24,7 +25,8 @@ class SmartPull(TaskHelper):
                 repo.remote().pull(master_branch)
                 if initial_commit != repo.commit():
                     self.logger.warning("master branch updated")
-
+        except GitCommandError as err:
+            self.logger.error(err)
         except Exception:
             self.handle_error()
 
