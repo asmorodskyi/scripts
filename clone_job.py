@@ -23,7 +23,7 @@ class SmartClone(openQAHelper):
         else:
             self.cmd += f" --from {args.frm}"
         if args.skipmaintenance:
-            self.params_str += "SKIP_MAINTENANCE_UPDATES=1 PUBLIC_CLOUD_IGNORE_EMPTY_REPO=1 PUBLIC_CLOUD_SKIP_MU=1"
+            self.params_str += " SKIP_MAINTENANCE_UPDATES=1 PUBLIC_CLOUD_IGNORE_EMPTY_REPO=1 PUBLIC_CLOUD_SKIP_MU=1"
 
     def run(self, jobid, dryrun: bool = False):
         try:
@@ -46,26 +46,6 @@ class SmartClone(openQAHelper):
             for job in unique_jobs:
                 self.shell_exec(
                     f"{self.cmd} {job.id} {self.params_str}", log=True, dryrun=dryrun
-                )
-        elif query.startswith("fixworker"):
-            if not latest_build:
-                raise ValueError(f"No jobs was found in {groupid}")
-            unique_jobs = self.osd_get_jobs_where(
-                latest_build, groupid, " and test != 'publiccloud_download_testrepos'"
-            )
-            for job in unique_jobs:
-                new_worker_class = ""
-                if job.flavor.startswith("EC2"):
-                    new_worker_class = "pc_ec2"
-                elif job.flavor.startswith("AZURE"):
-                    new_worker_class = "pc_azure"
-                elif job.flavor.startswith("GCE"):
-                    new_worker_class = "pc_gce"
-                else:
-                    raise AttributeError(f"Unexpected job flavor {job}")
-                new_params = f"{self.params_str} WORKER_CLASS={new_worker_class}"
-                self.shell_exec(
-                    f"{self.cmd} {job.id} {new_params}", log=True, dryrun=dryrun
                 )
         else:
             raise AttributeError(
