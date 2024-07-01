@@ -10,7 +10,7 @@ import json
 import configparser
 from datetime import datetime, timedelta
 import requests
-import logzero
+import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import psycopg2
@@ -27,8 +27,8 @@ class TaskHelper:
         self.config.read(f'/etc/{self.name}.ini')
         self.to_list = self.config.get('DEFAULT', 'to_list', fallback='asmorodskyi@suse.com')
         self.send_mails = self.config['DEFAULT'].getboolean('send_emails', fallback=False)
-        self.logger = logzero.setup_logger(name=name, formatter=logzero.LogFormatter(
-                fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
+        self.logger = logging.getLogger(name)
+        logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
         if self.config.has_section('OSD'):
             self.osd_username = self.config.get('OSD', 'username')
             self.osd_password = self.config.get('OSD', 'password')

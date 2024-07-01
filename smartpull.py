@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.11
 from git import Repo
 from git.exc import GitCommandError
 from myutils import TaskHelper

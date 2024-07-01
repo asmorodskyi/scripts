@@ -1,1 +1,4 @@
+# python3
 zypper in python3-logzero python3-SQLAlchemy python3-psycopg2 python3-GitPython gh
+# python311
+zypper in python311-GitPython python311-requests python311-SQLAlchemy python311-psycopg2
