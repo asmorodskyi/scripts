@@ -1,16 +1,17 @@
 #!/usr/bin/python3.11
 
 from pc.coverage import Coverage
-import urllib3 
+import urllib3
+
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def main():
 
-    latest_coverage = Coverage([219,274,275], "Latest")
+    latest_coverage = Coverage([219, 274, 275], "Latest", "publiccloud_")
 
-    aggregates_coverage = Coverage([427], "Aggregates")
+    aggregates_coverage = Coverage([427], "Aggregates", "publiccloud_")
 
     latest_coverage.compare_flavors(aggregates_coverage)
     latest_coverage.compare_tests(aggregates_coverage)
