@@ -29,9 +29,8 @@ class openQATest:
 class Coverage(openQAHelper):
 
     def extract_openqatests(self, group_id: int, testname_regex) -> list[openQATest]:
-        yaml_content = self.osd_get(f"api/v1/job_groups/{group_id}")[0]["template"]
-        contents = yaml.safe_load(yaml_content)
-        openqatests = []
+        contents = self.jobgroups[group_id]
+        cnt = 0
 
         for arch in contents["scenarios"].keys():
             for flavor in contents["scenarios"][arch].keys():
@@ -46,7 +45,8 @@ class Coverage(openQAHelper):
                     else:
                         testname = test
                     if testname_regex in testname:
-                        openqatests.append(
+                        cnt += 1
+                        self.all_tests.append(
                             openQATest(
                                 flavor_match_group[1],
                                 flavor_match_group[2],
@@ -56,18 +56,20 @@ class Coverage(openQAHelper):
                             )
                         )
 
-        logger.info(
-            f"{len(openqatests)} openQATest object generated for job group {group_id}"
-        )
-
-        return openqatests
+        logger.info(f"{cnt} openQATest object generated for job group {group_id}")
 
     def __init__(self, group_ids: list[int], name: str, testname_regex) -> None:
         super(Coverage, self).__init__(name, load_cache=False)
         logger.info(f"Create coverage for openQA job groups {group_ids}")
+        self.jobgroups = {}
         self.all_tests = list()
         for group_id in group_ids:
-            self.all_tests.extend(self.extract_openqatests(group_id, testname_regex))
+            yaml_content = self.osd_get(f"api/v1/job_groups/{group_id}")[0]["template"]
+            self.jobgroups[group_id] = yaml.safe_load(yaml_content)
+
+        for group_id in group_ids:
+            self.extract_openqatests(group_id, testname_regex)
+
         self.unique_flavors = set()
         self.unique_tests = set()
         for test in self.all_tests:
