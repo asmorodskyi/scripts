@@ -35,7 +35,8 @@ class Coverage(openQAHelper):
         for arch in contents["scenarios"].keys():
             for flavor in contents["scenarios"][arch].keys():
                 flavor_match_group = re.search(
-                    r"sle-(\d{2}-SP\d)-([\w\-]+)-(aarch64|x86_64|s390x)", flavor
+                    r"sle-(micro-)?(?P<version>\d+(?:\.\d+)?(?:-\w+\d+)?)?-([\w\-]+)-(aarch64|x86_64|s390x)",
+                    flavor,
                 )
                 if flavor_match_group is None:
                     raise Exception(f"{flavor} does not match regex")
@@ -48,10 +49,10 @@ class Coverage(openQAHelper):
                         cnt += 1
                         self.all_tests.append(
                             openQATest(
-                                flavor_match_group[1],
                                 flavor_match_group[2],
-                                testname,
                                 flavor_match_group[3],
+                                testname,
+                                flavor_match_group[4],
                                 testname_regex,
                             )
                         )
