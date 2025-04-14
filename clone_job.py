@@ -24,6 +24,8 @@ class SmartClone(openQAHelper):
             self.cmd += f" --from {args.frm}"
         if args.skipmaintenance:
             self.params_str += " SKIP_MAINTENANCE_UPDATES=1 PUBLIC_CLOUD_IGNORE_EMPTY_REPO=1 PUBLIC_CLOUD_SKIP_MU=1"
+            if '_GROUP=0' not in self.params_str:
+                self.params_str += " _GROUP=0"
 
     def run(self, jobid, dryrun: bool = False):
         try:
