@@ -18,6 +18,8 @@ class SmartClone(openQAHelper):
             self.params_str = args.params
         if args.branch:
             self.params_str += f" CASEDIR=https://github.com/{args.github_user}/os-autoinst-distri-opensuse.git#{args.branch} BUILD={args.branch} _GROUP=0"
+        if args.nocheck:
+            self.cmd += " --skip-checks"
         if args.winst:
             self.cmd += f" --within-instance {args.frm}"
         else:
@@ -71,6 +73,7 @@ def main():
         action="store_true",
         help="Add variables causing job to skip maint. updates",
     )
+    parser.add_argument('-n', "--nocheck", action="store_true", help="adding --skip-checks to clone_job.pl call")
     parser.add_argument("-g", "--github-user", default="asmorodskyi")
 
     args = parser.parse_args()
