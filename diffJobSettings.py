@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3.11
 
 import argparse
 import requests
@@ -40,7 +40,7 @@ for key, value in group_json1['job']['settings'].items():
 
 for key in group_json2['job']['settings'].keys():
     if key not in group_json1['job']['settings']:
-        extra_second.update({key:value})
+        extra_second.update({key:group_json2['job']['settings'][key]})
 
 print('All extra keys in first job AND diff between first and second ')
 print(diff_data)
