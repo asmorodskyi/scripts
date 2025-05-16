@@ -15,7 +15,8 @@ class SmartClone(openQAHelper):
         self.cmd = "/usr/share/openqa/script/clone_job.pl --skip-chained-deps --parental-inheritance"
         self.params_str = ""
         if args.params:
-            self.params_str = args.params
+            for p1 in args.params:
+                self.params_str +=  f" {p1}"
         if args.branch:
             self.params_str += f" CASEDIR=https://github.com/{args.github_user}/os-autoinst-distri-opensuse.git#{args.branch} BUILD={args.branch} _GROUP=0"
         if args.nocheck:
@@ -63,7 +64,7 @@ def main():
     group.add_argument("-q", "--query")
     group.add_argument("-j", "--jobid")
     parser.add_argument("-f", "--frm", default="openqa.suse.de")
-    parser.add_argument("-p", "--params")
+    parser.add_argument("params", help="List of variables passed to openQA", nargs="?", default=[])
     parser.add_argument("-w", "--winst", action="store_true")
     parser.add_argument("-d", "--dryrun", action="store_true")
     parser.add_argument("-b", "--branch")
