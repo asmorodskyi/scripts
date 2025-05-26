@@ -64,7 +64,7 @@ def main():
     group.add_argument("-q", "--query")
     group.add_argument("-j", "--jobid")
     parser.add_argument("-f", "--frm", default="openqa.suse.de")
-    parser.add_argument("params", help="List of variables passed to openQA", nargs="?", default=[])
+    parser.add_argument("params", help="List of variables passed to openQA", nargs="*", default=[])
     parser.add_argument("-w", "--winst", action="store_true")
     parser.add_argument("-d", "--dryrun", action="store_true")
     parser.add_argument("-b", "--branch")
