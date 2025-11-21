@@ -10,3 +10,6 @@ select test,distri,version,flavor,arch,build,machine from jobs where id in (sele
 
 select * from jobs where test='hpc_install' and flavor='Server-DVD';
 select * from job_modules where job_id in (select id from jobs where test='hpc_install' and flavor='Server-DVD');
+
+
+select count(j.id),date_trunc('day', j.t_created) AS day from jobs j join job_settings js on j.id = js.job_id where j.t_created >= '2025-07-12' and js.key = 'WORKER_CLASS' and js.value in ('pc_azure_qac', 'pc_ec2_qac', 'pc_gce_qac') group by day;

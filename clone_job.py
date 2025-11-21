@@ -14,6 +14,11 @@ class SmartClone(openQAHelper):
         super(SmartClone, self).__init__("SmartClone", load_cache=True)
         self.cmd = "/usr/share/openqa/script/clone_job.pl --skip-chained-deps --parental-inheritance"
         self.params_str = ""
+        if args.masktestissues:
+            job_json = self.osd_get(f'tests/{args.jobid}/file/vars.json')
+            for var1 in job_json:
+                if 'TEST_ISSUES' in var1 or 'TEST_REPOS' in var1:
+                    self.params_str += f" {var1}=''"
         if args.params:
             self.params_str += " ".join(args.params)
         if args.branch:
@@ -71,6 +76,7 @@ def main():
         action="store_true",
         help="Add variables causing job to skip maint. updates",
     )
+    parser.add_argument("-m", "--masktestissues", action="store_true")
     parser.add_argument("-g", "--github-user", default="asmorodskyi")
 
     args = parser.parse_args()
