@@ -13,3 +13,6 @@ select * from job_modules where job_id in (select id from jobs where test='hpc_i
 
 
 select count(j.id),date_trunc('day', j.t_created) AS day from jobs j join job_settings js on j.id = js.job_id where j.t_created >= '2025-07-12' and js.key = 'WORKER_CLASS' and js.value in ('pc_azure_qac', 'pc_ec2_qac', 'pc_gce_qac') group by day;
+
+
+select test,arch, max(t_finished-t_started) as duration from jobs where group_id=475 and state='done' and t_created > '2025-07-01'::date group by test,arch order by 3 desc;
