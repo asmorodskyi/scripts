@@ -2,7 +2,7 @@ import logging
 import re
 
 from typing import Self
-from myutils import openQAHelper
+from myutils import TaskHelper
 import yaml
 
 logger = logging.getLogger("coverage")
@@ -26,7 +26,7 @@ class openQATest:
         return f"|{self.flavor}| {self.version} | {self.test} | {self.arch}"
 
 
-class Coverage(openQAHelper):
+class Coverage(TaskHelper):
 
     def extract_openqatests(self, group_id: int, testname_regex) -> list[openQATest]:
         contents = self.jobgroups[group_id]
@@ -60,7 +60,7 @@ class Coverage(openQAHelper):
         logger.info(f"{cnt} openQATest object generated for job group {group_id}")
 
     def __init__(self, group_ids: list[int], name: str, testname_regex) -> None:
-        super(Coverage, self).__init__(name, load_cache=False)
+        super(Coverage, self).__init__(name)
         logger.info(f"Create coverage for openQA job groups {group_ids}")
         self.jobgroups = {}
         self.all_tests = list()

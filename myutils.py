@@ -1,21 +1,22 @@
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
-import smtplib
-import socket
-import traceback
 import os
 import subprocess
-import json
 import configparser
-from datetime import datetime, timedelta
 import requests
 import logging
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 import psycopg2
 from git import Repo, Git
-from models import Base, MessageLatency, JobSQL
+
+
+
+
+def shell_exec(cmd, logger,dryrun: bool = False):
+    if dryrun:
+        logger.info(f"NOT EXECUTING - {cmd}")
+        return
+    logger.info(cmd)
+    output = subprocess.check_output(cmd, shell=True)
+    logger.info("%s", output)
+    return output
 
 
 class TaskHelper:
@@ -26,41 +27,12 @@ class TaskHelper:
         self.config = configparser.ConfigParser()
         self.config.read(f'/etc/{self.name}.ini')
         self.to_list = self.config.get('DEFAULT', 'to_list', fallback='asmorodskyi@suse.com')
-        self.send_mails = self.config['DEFAULT'].getboolean('send_emails', fallback=False)
         self.logger = logging.getLogger(name)
         logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
         if self.config.has_section('OSD'):
             self.osd_username = self.config.get('OSD', 'username')
             self.osd_password = self.config.get('OSD', 'password')
             self.osd_host = self.config.get('OSD', 'host')
-
-    def send_mail(self, subject, message, html_message: str = None, custom_to_list: str = None):
-        try:
-            if html_message:
-                mimetext = MIMEMultipart('alternative')
-                part1 = MIMEText(message, 'plain')
-                part2 = MIMEText(html_message, 'html')
-                mimetext.attach(part1)
-                mimetext.attach(part2)
-            else:
-                mimetext = MIMEText(message)
-            mimetext['Subject'] = subject
-            mimetext['From'] = 'asmorodskyi@suse.com'
-            if not custom_to_list:
-                custom_to_list = self.to_list
-            mimetext['To'] = custom_to_list
-            server = smtplib.SMTP('relay.suse.de', 25)
-            server.ehlo()
-            server.sendmail('asmorodskyi@suse.com', custom_to_list.split(','), mimetext.as_string())
-        except Exception:
-            self.logger.error(f"Fail to send email - {traceback.format_exc()}")
-
-    def handle_error(self, error=''):
-        if not error:
-            error = traceback.format_exc()
-        self.logger.error(error)
-        if self.send_mails:
-            self.send_mail('[{}] ERROR - {}'.format(self.name, socket.gethostname()), error)
 
     def osd_get(self, suffix):
         response = requests.get(f'{self.OPENQA_URL_BASE}{suffix}', timeout=100, verify=False)
@@ -78,26 +50,6 @@ class TaskHelper:
         except Exception as e:
             self.logger.error("Failed to get build from openQA - %s", e)
         return build
-
-    def shell_exec(self, cmd, log=False, is_json=False, dryrun: bool = False):
-        if dryrun:
-            self.logger.info(f"NOT EXECUTING - {cmd}")
-            return
-        try:
-            if log:
-                self.logger.info(cmd)
-            output = subprocess.check_output(cmd, shell=True)
-            if is_json:
-                o_json = json.loads(output)
-                if log:
-                    self.logger.info("%s", o_json)
-                return o_json
-            else:
-                if log:
-                    self.logger.info("%s", output)
-                return output
-        except subprocess.CalledProcessError:
-            self.handle_error('Command died')
 
     def osd_query(self, query):
         if hasattr(self, 'osd_username') and hasattr(self, 'osd_password') and hasattr(self, 'osd_host'):
@@ -119,10 +71,11 @@ class TaskHelper:
             raise AttributeError("Connection to osd is not defined ")
 
 
-class GitHelper(TaskHelper):
+class GitHelper:
 
     def __init__(self):
-        super().__init__("GitHelper")
+        self.logger = logging.getLogger('GitHelper')
+        logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
         self.repo = Repo(os.getcwd())
         remotes = Git().remote().split()
         branches = Git().branch("--all").split()
@@ -134,88 +87,3 @@ class GitHelper(TaskHelper):
             self.remote = self.repo.remotes.origin
         if "master" not in branches:
             self.master = "main"
-
-
-class openQAHelper(TaskHelper):
-
-    FIND_LATEST = "select max(id) from jobs where  build='{}' and group_id='{}'  and test='{}' and arch='{}' \
-        and flavor='{}';"
-
-    def __init__(self, name, load_cache: bool = False, aliasgroups: str = None):
-        super(openQAHelper, self).__init__(name)
-        if aliasgroups:
-            groups_section = 'ALIAS'
-            var_name = aliasgroups
-        else:
-            groups_section = 'DEFAULT'
-            var_name = 'groups'
-        self.my_osd_groups = [int(num_str) for num_str in str(self.config.get(
-            groups_section, var_name, fallback='262,219,274,275')).split(',')]
-        if load_cache:
-            engine = create_engine('sqlite:////scripts/openqa_cache.db')
-            Base.metadata.create_all(engine, Base.metadata.tables.values(), checkfirst=True)
-            Session = sessionmaker(bind=engine)
-            self.session = Session()
-            self.msg_query = self.session.query(MessageLatency)
-
-    def get_group_name(self, job_group_id: int):
-        group_json = self.osd_get(f'group_overview/{job_group_id}.json')
-        return group_json['group']['name']
-
-    def check_latency(self, topic, subject):
-        msg = self.msg_query.filter(MessageLatency.topic == topic).filter(
-            MessageLatency.subject == subject).one_or_none()
-        rez = 0
-        if msg:
-            if datetime.now() < msg.locked_till:
-                self.logger.info(f'still locked {msg}')
-                rez = 3
-            else:
-                msg.lock()
-                self.logger.info(f'Got locked {msg}')
-                rez = 2
-            msg.inc_cnt()
-        else:
-            new_msg = MessageLatency(topic, subject)
-            self.session.add(new_msg)
-            rez = 1
-        self.session.commit()
-        return rez
-
-    def osd_get_jobs_where(self, build, group_id, extra_conditions=''):
-        rezult = self.osd_query(f"{JobSQL.SELECT_QUERY} build='{build}' and group_id='{group_id}' {extra_conditions}")
-        jobs = []
-        for raw_job in rezult:
-            sql_job = JobSQL(raw_job)
-            rez = self.osd_query(self.FIND_LATEST.format(
-                build, group_id, sql_job.name, sql_job.arch, sql_job.flavor))
-            if rez[0][0] == sql_job.id:
-                jobs.append(sql_job)
-        return jobs
-
-    def osd_get_job_variable(self, jobid, variable):
-        job_json = self.osd_get(f'/tests/{jobid}/file/vars.json')
-        if variable in job_json:
-            return job_json[variable]
-        else:
-            raise ValueError(f'{variable} not presented in jobID={jobid}')
-
-    def osd_get_latest_failures(self, before_hours, group_ids):
-        jobs = []
-        time_str = str(datetime.now() - timedelta(hours=before_hours))
-        rezult = self.osd_query(f"{JobSQL.SELECT_QUERY} result='failed' and t_created > '{time_str}'::date and group_id in ({group_ids})")
-        for raw_job in rezult:
-            sql_job = JobSQL(raw_job)
-            rez = self.osd_query(self.FIND_LATEST.format(
-                sql_job.build, raw_job[7], sql_job.name, sql_job.arch, sql_job.flavor))
-            if rez[0][0] == sql_job.id:
-                jobs.append(sql_job)
-        self.logger.info(f"Got {len(rezult)} failed jobs in monitored job groups on osd")
-        return jobs
-
-
-def is_matched(rules, topic, msg):
-    for rule in rules:
-        rkey, filter_matches = rule
-        if rkey.match(topic) and filter_matches(topic, msg):
-            return True

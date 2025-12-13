@@ -1,5 +1,5 @@
 #!/usr/bin/python3.11
-from myutils import GitHelper
+from myutils import GitHelper, shell_exec
 
 
 class GitCreatePR(GitHelper):
@@ -11,9 +11,9 @@ class GitCreatePR(GitHelper):
         msg_arr = msg.partition('\n')
         if len(msg_arr) >1:
             body = ''.join(msg_arr[1:])
-            self.shell_exec(f"gh pr create --title '{msg_arr[0]}' --body '{body}'", log=True)
+            shell_exec(f"gh pr create --title '{msg_arr[0]}' --body '{body}'", self.logger)
         else:
-            self.shell_exec(f"gh pr create --title '{msg}' --body '{msg}'", log=True)
+            shell_exec(f"gh pr create --title '{msg}' --body '{msg}'", self.logger)
 
 
 def main():

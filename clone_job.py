@@ -3,15 +3,37 @@
 import argparse
 import re
 import urllib3
-from myutils import openQAHelper
+from myutils import TaskHelper, shell_exec
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-class SmartClone(openQAHelper):
+class JobSQL:
+
+    # group_id is queried but not serialized because in most cases we don't need it
+    # but we have one case where we do ( openQAHelper.osd_get_latest_failures)
+    SELECT_QUERY = 'select id, test, result, state, flavor, arch, build, group_id from jobs where '
+
+    def __init__(self, raw_job):
+        self.id = raw_job[0]
+        self.name = raw_job[1]
+        self.result = raw_job[2]
+        self.state = raw_job[3]
+        self.flavor = raw_job[4]
+        self.arch = raw_job[5]
+        self.build = raw_job[6]
+
+    def __str__(self):
+        pattern = 'Job(id: {}, name: {}, result: {}, state: {}, flavor: {}, arch: {}, build: {})'
+        return pattern.format(self.id, self.name, self.result, self.state, self.flavor, self.arch, self.build)
+
+class SmartClone(TaskHelper):
+
+    FIND_LATEST = "select max(id) from jobs where  build='{}' and group_id='{}'  and test='{}' and arch='{}' \
+        and flavor='{}';"
 
     def __init__(self, args):
-        super(SmartClone, self).__init__("SmartClone", load_cache=True)
+        super(SmartClone, self).__init__("SmartClone")
         self.cmd = "/usr/share/openqa/script/clone_job.pl --skip-chained-deps --parental-inheritance"
         self.params_str = ""
         if args.masktestissues:
@@ -33,14 +55,20 @@ class SmartClone(openQAHelper):
                 self.params_str += " _GROUP=0"
 
     def run(self, jobid, dryrun: bool = False):
-        try:
-            ids = jobid.split(",")
-            for one_id in ids:
-                self.shell_exec(
-                    f"{self.cmd} {one_id} {self.params_str}", log=True, dryrun=dryrun
-                )
-        except Exception:
-            self.handle_error()
+        ids = jobid.split(",")
+        for one_id in ids:
+            shell_exec(f"{self.cmd} {one_id} {self.params_str}", self.logger, dryrun=dryrun)
+
+    def osd_get_jobs_where(self, build, group_id, extra_conditions=''):
+        rezult = self.osd_query(f"{JobSQL.SELECT_QUERY} build='{build}' and group_id='{group_id}' {extra_conditions}")
+        jobs = []
+        for raw_job in rezult:
+            sql_job = JobSQL(raw_job)
+            rez = self.osd_query(self.FIND_LATEST.format(
+                build, group_id, sql_job.name, sql_job.arch, sql_job.flavor))
+            if rez[0][0] == sql_job.id:
+                jobs.append(sql_job)
+        return jobs
 
     def query(self, query: str, dryrun: bool = False):
         m = re.match(r"(\w+)=(\w+)", query)
@@ -51,8 +79,8 @@ class SmartClone(openQAHelper):
                 latest_build, groupid, " and test = 'publiccloud_download_testrepos'"
             )
             for job in unique_jobs:
-                self.shell_exec(
-                    f"{self.cmd} {job.id} {self.params_str}", log=True, dryrun=dryrun
+                shell_exec(
+                    f"{self.cmd} {job.id} {self.params_str}", self.logger, dryrun=dryrun
                 )
         else:
             raise AttributeError(

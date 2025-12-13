@@ -1,16 +1,15 @@
 #!/usr/bin/python3.11
 
-from myutils import openQAHelper
+from myutils import TaskHelper, shell_exec
 import urllib3
-import requests
 import re
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-class TagCarryOver(openQAHelper):
+class TagCarryOver(TaskHelper):
 
     def __init__(self):
-        super(TagCarryOver, self).__init__('tagscarryover', load_cache=False)
+        super(TagCarryOver, self).__init__('tagscarryover')
 
     def get_latest_comment(self, groupid, parent_group: bool):
         if parent_group:
@@ -48,7 +47,7 @@ class TagCarryOver(openQAHelper):
             self.logger.info('Add a comment to group {} with reference {}'.format(dest_groupid, comment_text))
             cmd = 'openqa-cli api --host {} -X POST groups/{}/comments text=\'{}\''.format(
                 self.OPENQA_URL_BASE, dest_groupid, comment_text)
-            self.shell_exec(cmd, log=True)
+            shell_exec(cmd, self.logger)
 
     def run(self):
         source_comment = self.get_latest_comment('15', True)
