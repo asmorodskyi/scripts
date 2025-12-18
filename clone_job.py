@@ -104,7 +104,7 @@ def main():
         action="store_true",
         help="Add variables causing job to skip maint. updates",
     )
-    parser.add_argument("-m", "--masktestissues", action="store_true")
+    parser.add_argument("-m", "--masktestissues", action="store_true", help="Cloning job with all *_TEST_ISSUES vars set to empty")
     parser.add_argument("-g", "--github-user", default="asmorodskyi")
 
     args = parser.parse_args()
