@@ -9,14 +9,14 @@ from git import Repo, Git
 
 
 
-def shell_exec(cmd, logger,dryrun: bool = False):
+def shell_exec(cmd, logger,dryrun: bool = False) -> str:
     if dryrun:
         logger.info(f"NOT EXECUTING - {cmd}")
-        return
+        return ""
     logger.info(cmd)
     output = subprocess.check_output(cmd, shell=True)
     logger.info("%s", output)
-    return output
+    return str(output)
 
 
 class TaskHelper:

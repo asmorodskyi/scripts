@@ -3,6 +3,7 @@
 import argparse
 import re
 import urllib3
+from datetime import datetime
 from myutils import TaskHelper, shell_exec
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -31,6 +32,7 @@ class SmartClone(TaskHelper):
 
     FIND_LATEST = "select max(id) from jobs where  build='{}' and group_id='{}'  and test='{}' and arch='{}' \
         and flavor='{}';"
+    CLONED_JOBS_LOG = "/var/log/cloned_urls.log"
 
     def __init__(self, args):
         super(SmartClone, self).__init__("SmartClone")
@@ -56,8 +58,15 @@ class SmartClone(TaskHelper):
 
     def run(self, jobid, dryrun: bool = False):
         ids = jobid.split(",")
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         for one_id in ids:
-            shell_exec(f"{self.cmd} {one_id} {self.params_str}", self.logger, dryrun=dryrun)
+            ret1 = shell_exec(f"{self.cmd} {one_id} {self.params_str}", self.logger, dryrun=dryrun)
+            if ret1 is not None:
+                match = re.search(r"->\s+(https?://[^\s\\']+)", ret1)
+                if match:
+                    url = match.group(1).rstrip("\\n'")
+                    with open(SmartClone.CLONED_JOBS_LOG, "a") as f:
+                        f.write(f"{current_time} : {url}")
 
     def osd_get_jobs_where(self, build, group_id, extra_conditions=''):
         rezult = self.osd_query(f"{JobSQL.SELECT_QUERY} build='{build}' and group_id='{group_id}' {extra_conditions}")
