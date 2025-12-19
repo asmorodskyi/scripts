@@ -66,7 +66,7 @@ class SmartClone(TaskHelper):
                 if match:
                     url = match.group(1).rstrip("\\n'")
                     with open(SmartClone.CLONED_JOBS_LOG, "a") as f:
-                        f.write(f"{current_time} : {url}")
+                        f.write(f"{current_time} : {url}\n")
 
     def osd_get_jobs_where(self, build, group_id, extra_conditions=''):
         rezult = self.osd_query(f"{JobSQL.SELECT_QUERY} build='{build}' and group_id='{group_id}' {extra_conditions}")
