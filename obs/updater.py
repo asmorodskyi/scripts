@@ -11,12 +11,15 @@ from pathlib import Path
 from osctiny import Osc
 from osctiny.extensions.packages import Package
 import configparser
+import subprocess
 
 logger = logging.getLogger("osc")
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
 
 
 class Updater:
+
+    HOME_PROJECT = "home:asmorodskyi:branches:devel:languages:python"
 
     def __init__(self, project: str, package: str, new_version: str) -> None:
         logger.info(f"init OSC object for {project}-{package}")
@@ -34,6 +37,7 @@ class Updater:
         self.new_version = new_version
         self.osc_package = Package(self.osc)
         self.package_path = f"{home_dir}/obs_updater/{self.package}"
+        self.specfile = f"{self.package_path}/{self.package}.spec"
 
     def create_package_branch(self):
         logger.info("## Step 1 ##: Branch package in OBS")
@@ -42,15 +46,17 @@ class Updater:
     def checkout_package(self):
         logger.info("## Step 2 ##: Checkout branched package")
         Path(self.package_path).mkdir()
-        self.osc_package.checkout(self.project, self.package, self.package_path)
+        self.osc_package.checkout(Updater.HOME_PROJECT, self.package, self.package_path)
+
+    def _get_spec_file_content(self):
+        with open(self.specfile, 'r') as file:
+            return file.read()
 
     def _get_from_spec(self, regex):
-        pattern = re.compile(regex)
-        with open(f"{self.package_path}/{self.package}.spec", 'r') as file:
-            for line in file:
-                match = pattern.match(line)
-                if match:
-                    return match.group(1).strip()
+        pattern = re.compile(regex, re.MULTILINE)
+        match = pattern.search(self._get_spec_file_content())
+        if match:
+            return match.group(1).strip()
         raise ValueError(f"{regex} was not found")
 
     def get_new_version(self):
@@ -65,7 +71,31 @@ class Updater:
         urllib.request.urlretrieve (new_source_url, f"{self.package_path}/{new_filename}")
         old_filename = new_filename.replace(self.new_version, old_version)
         logger.info("Deleting old version of the package %s", new_filename.replace(self.new_version, old_version))
-        os.remove(f"{self.package_path}/{old_filename}")
+        self._execute_cmd(f"osc rm {old_filename}")
+
+    def tweak_specfile(self):
+        logger.info("## Step 4 ##: Tweak specfile")
+        updated_content = re.sub(r'(Version:\s+)(\S+)', rf'\g<1>{self.new_version}', self._get_spec_file_content())
+        with open(self.specfile, 'w') as f:
+            f.write(updated_content)
+
+    def _execute_cmd(self, cmd):
+        logger.info(f"Executing {cmd}")
+        output = subprocess.check_output(cmd, shell=True, cwd=self.package_path)
+        output_str = output.decode('utf-8')
+        logger.info(output_str)
+        return output_str
+
+    def commit(self):
+        logger.info("## Step 5 ## - add/commit changed files")
+        output_str = self._execute_cmd("osc status")
+        changed_files = [
+            line.split(maxsplit=1)[1]
+            for line in output_str.splitlines()
+            if line.strip() and not line.startswith('D')
+        ]
+        for file in changed_files:
+            self._execute_cmd(f"osc add {file}")
 
 
 
@@ -79,7 +109,10 @@ def main():
         1 - create package branch\n
         2 - checkout package\n
         3 - get new version
-        NOTE: selecting previous steps automatically means execution of following steps 
+        4 - tweak version in specfile
+        5 - add/commit changed files
+        6 - MANUAL STEP - 'osc ci' ( because requires inserting commit message)
+        NOTE: selecting previous steps automatically means execution of following steps
         """, default=1)
     args = parser.parse_args()
     updater = Updater("openSUSE:Factory", args.package, args.new_version)
@@ -90,6 +123,10 @@ def main():
         updater.checkout_package()
     if step <= 3:
         updater.get_new_version()
+    if step <= 4:
+        updater.tweak_specfile()
+    if step <= 5:
+        updater.commit()
 
 
 if __name__ == "__main__":
