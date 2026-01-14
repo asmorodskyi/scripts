@@ -12,6 +12,7 @@ from osctiny import Osc
 from osctiny.extensions.packages import Package
 import configparser
 import subprocess
+from packaging import version
 
 logger = logging.getLogger("osc")
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
@@ -48,13 +49,32 @@ class Updater:
         Path(self.package_path).mkdir()
         self.osc_package.checkout(Updater.HOME_PROJECT, self.package, self.package_path)
 
-    def _get_spec_file_content(self):
-        with open(self.specfile, 'r') as file:
-            return file.read()
+    def _get_spec_file_content(self, remote: bool = False):
+        if remote:
+            files_xml = self.osc.packages.get_files(
+                project=self.project, package=self.package
+            )
+            spec_filename = None
+            for entry in files_xml.xpath("//entry"):
+                name = entry.get("name")
+                if name.endswith(".spec"):
+                    spec_filename = name
+                    break
 
-    def _get_from_spec(self, regex):
+            if not spec_filename:
+                raise Exception(f"No .spec file found in {self.project}/{self.package}")
+
+            response = self.osc.packages.get_file(
+                project=self.project, package=self.package, filename=spec_filename
+            )
+            return response.text
+        else:
+            with open(self.specfile, "r") as file:
+                return file.read()
+
+    def _get_from_spec(self, regex, remote: bool = False):
         pattern = re.compile(regex, re.MULTILINE)
-        match = pattern.search(self._get_spec_file_content())
+        match = pattern.search(self._get_spec_file_content(remote))
         if match:
             return match.group(1).strip()
         raise ValueError(f"{regex} was not found")
@@ -63,26 +83,35 @@ class Updater:
         logger.info("## Step 3 ##: Download new version and delete old one")
         old_version = self._get_from_spec(r"^\s*Version:\s*(.*)")
         source_url = self._get_from_spec(r"^\s*Source:\s*(.*)")
-        new_source_url = source_url.replace('%{version}', self.new_version)
+        new_source_url = source_url.replace("%{version}", self.new_version)
         logger.info("Downloading new package from %s", new_source_url)
         parsed_new_source = urlparse(new_source_url)
         new_filename = os.path.basename(parsed_new_source.path)
         ssl._create_default_https_context = ssl._create_unverified_context
-        urllib.request.urlretrieve (new_source_url, f"{self.package_path}/{new_filename}")
+        urllib.request.urlretrieve(
+            new_source_url, f"{self.package_path}/{new_filename}"
+        )
         old_filename = new_filename.replace(self.new_version, old_version)
-        logger.info("Deleting old version of the package %s", new_filename.replace(self.new_version, old_version))
+        logger.info(
+            "Deleting old version of the package %s",
+            new_filename.replace(self.new_version, old_version),
+        )
         self._execute_cmd(f"osc rm {old_filename}")
 
     def tweak_specfile(self):
         logger.info("## Step 4 ##: Tweak specfile")
-        updated_content = re.sub(r'(Version:\s+)(\S+)', rf'\g<1>{self.new_version}', self._get_spec_file_content())
-        with open(self.specfile, 'w') as f:
+        updated_content = re.sub(
+            r"(Version:\s+)(\S+)",
+            rf"\g<1>{self.new_version}",
+            self._get_spec_file_content(),
+        )
+        with open(self.specfile, "w") as f:
             f.write(updated_content)
 
     def _execute_cmd(self, cmd):
         logger.info(f"Executing {cmd}")
         output = subprocess.check_output(cmd, shell=True, cwd=self.package_path)
-        output_str = output.decode('utf-8')
+        output_str = output.decode("utf-8")
         logger.info(output_str)
         return output_str
 
@@ -92,20 +121,31 @@ class Updater:
         changed_files = [
             line.split(maxsplit=1)[1]
             for line in output_str.splitlines()
-            if line.strip() and not line.startswith('D')
+            if line.strip() and not line.startswith("D")
         ]
         for file in changed_files:
             self._execute_cmd(f"osc add {file}")
 
-
+    def get_current_version(self, new_version):
+        current_v = self._get_from_spec(r"^\s*Version:\s*(.*)", True)
+        if version.parse(current_v) >= version.parse(new_version):
+            raise Exception(f"No update needed. {current_v} is already latest.")
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-p", "--package", help="Name of the package to update", required=True)
-    parser.add_argument("-n", "--new_version", help="Desired package version to update", required=True)
-    parser.add_argument("-s", "--step", help=""" what steps needs to be executed.\n
+    parser.add_argument(
+        "-p", "--package", help="Name of the package to update", required=True
+    )
+    parser.add_argument(
+        "-n", "--new_version", help="Desired package version to update", required=True
+    )
+    parser.add_argument(
+        "-s",
+        "--step",
+        help=""" what steps needs to be executed.\n
         currently available steps\n
+        0 - check if update make sense (make sure that version to which we upgrading is not already there)
         1 - create package branch\n
         2 - checkout package\n
         3 - get new version
@@ -113,11 +153,15 @@ def main():
         5 - add/commit changed files
         6 - MANUAL STEP - 'osc ci' ( because requires inserting commit message)
         NOTE: selecting previous steps automatically means execution of following steps
-        """, default=1)
+        """,
+        default=0,
+    )
     args = parser.parse_args()
     updater = Updater("openSUSE:Factory", args.package, args.new_version)
     step = int(args.step)
-    if step == 1:
+    if step == 0:
+        updater.get_current_version(args.new_version)
+    if step <= 1:
         updater.create_package_branch()
     if step <= 2:
         updater.checkout_package()
