@@ -16,3 +16,5 @@ select count(j.id),date_trunc('day', j.t_created) AS day from jobs j join job_se
 
 
 select test,arch, max(t_finished-t_started) as duration from jobs where group_id=475 and state='done' and t_created > '2025-07-01'::date group by test,arch order by 3 desc;
+
+select count(*), machine, assigned_worker_id from jobs where result='incomplete' and t_created > '2026-02-09'::date group by 2,3 order by 1;

@@ -1,4 +1,4 @@
-#!/usr/bin/python3.11
+#!/usr/bin/python3
 
 from pathlib import Path
 import yaml

@@ -1,4 +1,4 @@
-#!/usr/bin/python3.11
+#!/usr/bin/python3
 
 import logging
 from pc.coverage import Coverage

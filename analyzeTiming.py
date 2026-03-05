@@ -1,4 +1,4 @@
-#!/usr/bin/python3.11
+#!/usr/bin/python3
 import re
 from datetime import datetime
 import urllib.request

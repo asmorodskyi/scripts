@@ -1,4 +1,4 @@
-#!/usr/bin/python3.11
+#!/usr/bin/python3
 from git import Repo
 from git.exc import GitCommandError
 import logging

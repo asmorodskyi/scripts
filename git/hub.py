@@ -1,4 +1,4 @@
-#!/usr/bin/python3.11
+#!/usr/bin/python3
 from myutils import GitHelper, shell_exec
 
 
