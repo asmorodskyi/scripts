@@ -1,3 +1,4 @@
+alias aicli="/home/asmorodskyi/source/gemini-container/run.sh"
 alias gco="git checkout"
 alias gpl="git pull"
 alias gph="git push"
