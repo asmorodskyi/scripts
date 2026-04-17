@@ -5,6 +5,8 @@ import re
 import argparse
 import logging
 import urllib.request
+import urllib.error
+import sys
 from urllib.parse import urlparse
 import ssl
 from pathlib import Path
@@ -88,13 +90,17 @@ class Updater:
         parsed_new_source = urlparse(new_source_url)
         new_filename = os.path.basename(parsed_new_source.path)
         ssl._create_default_https_context = ssl._create_unverified_context
-        urllib.request.urlretrieve(
-            new_source_url, f"{self.package_path}/{new_filename}"
-        )
+        try:
+            urllib.request.urlretrieve(
+                new_source_url, f"{self.package_path}/{new_filename}"
+            )
+        except (urllib.error.URLError, Exception) as e:
+            logger.error(f"Failed to download {new_source_url}: {e}")
+            sys.exit(1)
         old_filename = new_filename.replace(self.new_version, old_version)
         logger.info(
             "Deleting old version of the package %s",
-            new_filename.replace(self.new_version, old_version),
+            old_filename,
         )
         self._execute_cmd(f"osc rm {old_filename}")
 
