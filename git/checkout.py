@@ -5,20 +5,23 @@ from myutils import GitHelper
 
 
 class GitCheckout(GitHelper):
-
     def run(self, checkout_type, branch_name):
-        if checkout_type == 'n':
-            self.repo.git.checkout('HEAD', b=branch_name)
-            self.repo.git.push('--set-upstream', self.remote, branch_name)
-        elif checkout_type == 'b':
-            self.remote.fetch()
-            self.repo.create_head(branch_name, self.remote.refs[branch_name])
+        # gcon alias
+        if checkout_type == "n":
+            self.repo.git.checkout("HEAD", b=branch_name)
+            self.repo.git.push("--set-upstream", self.user_remote, branch_name)
+        # gcob alias. checkout remote branch which not exists locally
+        elif checkout_type == "b":
+            self.user_remote.fetch()
+            self.repo.create_head(branch_name, self.user_remote.refs[branch_name])
             self.repo.heads[branch_name].set_tracking_branch(
-                self.remote.refs[branch_name])
+                self.user_remote.refs[branch_name]
+            )
             self.repo.heads[branch_name].checkout()
-        elif checkout_type == 'm':
+        # gcom alias. fetch remote master and check it out
+        elif checkout_type == "m":
+            self.orig_remote.fetch()
             self.repo.git.checkout(self.master)
-            self.repo.remotes.origin.pull()
 
 
 def main():

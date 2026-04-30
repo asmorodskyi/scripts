@@ -5,7 +5,7 @@ from myutils import GitHelper
 class GitRebase(GitHelper):
 
     def run(self):
-        self.remote.fetch()
+        self.orig_remote.fetch()
         self.repo.git.rebase(self.master)
 
 

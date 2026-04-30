@@ -89,7 +89,6 @@ class GitHelper:
         self.master = "master"
         if "main" in self.repo.heads:
             self.master = "main"
-        if "asmorodskyi" in Git().remote().split():
-            self.remote = self.repo.remotes.asmorodskyi
-        else:
-            self.remote = self.repo.remotes.origin
+        if "asmorodskyi" in self.repo.remotes:
+            self.user_remote = self.repo.remotes.asmorodskyi
+        self.orig_remote = self.repo.remotes.origin
