@@ -6,6 +6,7 @@ from myutils import GitHelper
 
 class GitCheckout(GitHelper):
     def run(self, checkout_type, branch_name):
+        self.fail_on_dirty()
         # gcon alias
         if checkout_type == "n":
             self.repo.git.checkout("HEAD", b=branch_name)
@@ -22,6 +23,7 @@ class GitCheckout(GitHelper):
         elif checkout_type == "m":
             self.orig_remote.fetch()
             self.repo.git.checkout(self.master)
+            self.repo.git.reset("--hard", f"{self.orig_remote.name}/{self.master}")
 
 
 def main():

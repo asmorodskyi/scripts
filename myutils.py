@@ -1,10 +1,11 @@
 import os
+import sys
 import subprocess
 import configparser
 import requests
 import logging
 import psycopg2
-from git import Repo, Git
+from git import Repo
 
 
 def shell_exec(cmd, logger, dryrun: bool = False) -> str:
@@ -92,3 +93,8 @@ class GitHelper:
         if "asmorodskyi" in self.repo.remotes:
             self.user_remote = self.repo.remotes.asmorodskyi
         self.orig_remote = self.repo.remotes.origin
+
+    def fail_on_dirty(self):
+        if self.repo.is_dirty(untracked_files=True):
+            self.logger.error("Cannot switch to master: uncommitted changes present")
+            sys.exit(1)
