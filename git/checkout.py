@@ -18,7 +18,7 @@ class GitCheckout(GitHelper):
             self.repo.heads[branch_name].checkout()
         elif checkout_type == 'm':
             self.repo.git.checkout(self.master)
-            self.repo.remotes.origin.pull(self.master)
+            self.repo.remotes.origin.pull()
 
 
 def main():
