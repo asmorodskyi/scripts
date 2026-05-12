@@ -90,9 +90,11 @@ class GitHelper:
         self.master = "master"
         if "main" in self.repo.heads:
             self.master = "main"
+        self.orig_remote = self.repo.remotes.origin
         if "asmorodskyi" in self.repo.remotes:
             self.user_remote = self.repo.remotes.asmorodskyi
-        self.orig_remote = self.repo.remotes.origin
+        else:
+            self.user_remote = self.orig_remote
 
     def fail_on_dirty(self):
         if self.repo.is_dirty(untracked_files=True):
