@@ -1,0 +1,3 @@
+#!/bin/sh -e
+base=$(git rev-parse --verify origin/main >/dev/null 2>&1 && echo main || echo master)
+git pull --rebase origin "$base" && git push asmorodskyi -f
