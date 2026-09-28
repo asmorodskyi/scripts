@@ -1,3 +1,4 @@
+alias claude="nono run --profile  asm-claude --allow-cwd -- claude"
 alias gco="git checkout"
 alias gpl="git pull"
 alias gph="git push"
@@ -26,3 +27,4 @@ alias la='ls -A'
 alias l='ls -CFlh'
 alias lsd="ls -alF | grep /$"
 alias diskspace="du -S | sort -n -r |more"
+alias opencode="nono run --profile asm-opencode --allow-cwd -- opencode"
