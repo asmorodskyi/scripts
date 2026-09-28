@@ -87,14 +87,19 @@ class GitHelper:
         self.logger = logging.getLogger("GitHelper")
         logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
         self.repo = Repo(os.getcwd())
-        self.master = "master"
-        if "main" in self.repo.heads:
-            self.master = "main"
         self.orig_remote = self.repo.remotes.origin
         if "asmorodskyi" in self.repo.remotes:
             self.user_remote = self.repo.remotes.asmorodskyi
         else:
             self.user_remote = self.orig_remote
+
+        # Determine main branch from remote refs
+        self.master = "master"
+        if "main" in self.orig_remote.refs:
+            self.master = "main"
+        elif "master" not in self.orig_remote.refs:
+            self.logger.error("Neither 'main' nor 'master' found in remote")
+            sys.exit(1)
 
     def fail_on_dirty(self):
         if self.repo.is_dirty(untracked_files=True):

@@ -22,6 +22,9 @@ class GitCheckout(GitHelper):
         # gcom alias. fetch remote master and check it out
         elif checkout_type == "m":
             self.orig_remote.fetch()
+            # Create local branch if it doesn't exist
+            if self.master not in self.repo.heads:
+                self.repo.create_head(self.master, self.orig_remote.refs[self.master])
             self.repo.git.checkout(self.master)
             self.repo.git.reset("--hard", f"{self.orig_remote.name}/{self.master}")
 
