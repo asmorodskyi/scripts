@@ -27,4 +27,3 @@ alias la='ls -A'
 alias l='ls -CFlh'
 alias lsd="ls -alF | grep /$"
 alias diskspace="du -S | sort -n -r |more"
-alias opencode="nono run --profile asm-opencode --allow-cwd -- opencode"
