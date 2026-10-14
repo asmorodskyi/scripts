@@ -1,4 +1,3 @@
-alias claude="nono run --profile  asm-claude --allow-cwd -- claude"
 alias gco="git checkout"
 alias gpl="git pull"
 alias gph="git push"
